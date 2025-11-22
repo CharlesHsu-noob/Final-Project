@@ -5,7 +5,7 @@ import os
 import main
 
 def setup(game:xo.VAR) -> xo.VAR :
-    start = xo.VAR
+    start = xo.VAR()
     start.button_list=[]
     start.bg=pg.transform.scale(pg.image.load(pd.start_menu_bg_path).convert_alpha(),
                                 (game.menu_w,game.menu_h))
@@ -23,4 +23,12 @@ def update(game:xo.VAR,start:xo.VAR) -> None:
     game.screen.blit(start.bg,(0,0))
     for button in start.button_list:
         button.update()
-        game.screen.blit(button.image,button.rect)
+        if button==start.notebook:
+            if button.ispress:
+                #game.game_state="create_new_save"
+                #havent finished
+                game.game_state="home"
+        elif button==start.lamp:
+            if button.ispress:
+                game.running=False
+        game.screen.blit(button.image, button.rect)

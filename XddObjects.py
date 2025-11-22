@@ -22,6 +22,10 @@ import XddObjects as xo
 
 class VAR:
     def __init__(self):
+        '''
+        this is for global variable in diffenent file
+        make it easy to transform data between in multiple files
+        '''
         pass
 
 def collision_by_mask_with_mouse(rect,mask):
@@ -219,7 +223,7 @@ class characterObject(pg.sprite.Sprite):
             for path in picture_paths_stand:
                 self.images.append(pg.transform.scale(
                     pg.image.load(
-                        os.path.join(path)
+                        path
                         ).convert_alpha(),size))
             self.image = self.images[0]
         except pg.error:
@@ -229,7 +233,7 @@ class characterObject(pg.sprite.Sprite):
             for path in picture_paths_move:
                 self.moves.append(pg.transform.scale(
                     pg.image.load(
-                        os.path.join(path)).convert_alpha(),size))
+                        path).convert_alpha(),size))
         except pg.error:
             self.image = pg.Surface(size)
             self.image.fill((0, 255, 0)) # Green placeholder
@@ -241,6 +245,7 @@ class characterObject(pg.sprite.Sprite):
         self.mask_rect=self.mask.get_rect(center=default_center)
         self.half_w=self.mask_rect.width/2
         self.half_h=self.mask_rect.height/2
+        self.char_half=[self.half_w,self.half_h]
     def update(self,pressKeyQueue):
         self.move_character = False
         self.is_move = False
@@ -301,12 +306,15 @@ class characterObject(pg.sprite.Sprite):
 
 class npcObject(pg.sprite.Sprite):
     def __init__(self,picture_paths,center,size):
+        '''
+        :param center: the pos on the map(map x,map y)
+        '''
         super().__init__()
         self.images = []
         for path in picture_paths:
             self.images.append(pg.transform.scale(
                 pg.image.load(
-                    os.path.join(path)).convert_alpha(),size))
+                    path).convert_alpha(),size))
         self.image=self.images[0]
         #self.rect=self.image.get_rect(center=center)
         self.map_x,self.map_y=center
@@ -395,3 +403,172 @@ class doorObject(pg.sprite.Sprite):
             self.need_deter=True
             self.rect=self.image.get_rect(center=(self.map_x-camera_x,self.map_y-camera_y))
 
+class ColorCycler:
+    """
+    自動管理計數器，用正弦波實現平滑的 RGB 循環顏色變換。
+    """
+    def __init__(self, speed: float = 0.02):
+        self.counter = 0.0
+        self.speed = speed
+
+    def get_color(self) -> tuple[int, int, int]:
+        """
+        更新計數器並回傳當前的彩虹循環顏色。
+        """
+        # 1. 更新計數器
+        self.counter += self.speed
+        if self.counter>=10000:
+            self.counter=0
+        time = self.counter
+
+        # 2. 計算 R, G, B 分量 (使用不同的相位差)
+        R = math.sin(time) * 127.5 + 127.5
+        G = math.sin(time + 2 * math.pi / 3) * 127.5 + 127.5
+        B = math.sin(time + 4 * math.pi / 3) * 127.5 + 127.5
+
+        # 3. 確保 R, G, B 值在 0-255 的整數範圍內
+        return int(R), int(G), int(B)
+
+
+#--------------------------------------------------------------------------------------------
+#universal function
+def draw_scene(game,bg,npc_list,door_list,char,wall_list):#依照圖層序排列
+    game.screen.blit(bg.image,bg.rect)
+    for npc in npc_list:
+        if npc.need_draw:
+                game.screen.blit(npc.image,npc.rect)
+    for door in door_list:
+        if door.need_deter and door.visible:
+            game.screen.blit(door.image,door.rect)
+    game.screen.blit(char.image,char.rect)
+    for wall in wall_list:
+        if wall.need_deter and wall.visible:
+                game.screen.blit(wall.image,wall.rect)
+
+
+def wall_collision(char,wall_list,last_map_x,last_map_y): #need rewrite
+    wall_rect_corretion_x=20#校正空氣牆
+    wall_rect_corretion_y=3
+    return_x=char.map_x
+    return_y=char.map_y
+    for wall in wall_list:
+        if wall.need_deter:
+            if char.map_x+char.half_w>wall.map_x-wall.half_w +wall_rect_corretion_x and\
+                char.map_x-char.half_w<wall.map_x+wall.half_w -wall_rect_corretion_x and\
+                abs(char.map_y-wall.map_y)<char.half_h+wall.half_h -wall_rect_corretion_y:
+                return_x=last_map_x
+            if char.map_y+char.half_h>wall.map_y-wall.half_h +wall_rect_corretion_y and\
+                char.map_y-char.half_h<wall.map_y+wall.half_h -wall_rect_corretion_y and\
+                abs(char.map_x-wall.map_x)<char.half_w+wall.half_w -wall_rect_corretion_x:
+                return_y=last_map_y
+    return return_x,return_y
+
+def boundary_deter(char,bg,char_half):
+    return_x=char.map_x
+    return_y=char.map_y
+    if char.map_x < char_half[0]:
+        return_x = char_half[0]
+    elif char.map_x > bg.map_w - char_half[0]:
+        return_x = bg.map_w - char_half[0]
+    if char.map_y < char_half[1]:
+        return_y = char_half[1]
+    elif char.map_y > bg.map_h - char_half[1]:
+        return_y = bg.map_h - char_half[1]
+    return return_x,return_y
+
+def door_update(game,char,door_list,camera_x,camera_y) -> bool:
+    for door in door_list:
+        door.update(camera_x,camera_y,game.w,game.h)
+        if door.need_deter and door.visible:
+            game.screen.blit(door.image, door.rect)
+        if abs(door.rect.centerx-char.rect.centerx)<char.half_w and\
+            abs(door.rect.centery-char.rect.centery)<char.half_h:
+            frozen=game.screen.copy()
+            if char.move_state=="up":
+                char.map_y+=30
+            elif char.move_state=="down":
+                char.map_y-=30
+            if char.move_state=="left":
+                char.map_x+=30
+            elif char.move_state=="right":
+                char.map_x-=30
+            game.state_pos[game.game_state]=char.map_x,char.map_y
+            char.map_x,char.map_y=game.state_pos[door.target]
+            scene_fade_out(frozen)
+            game.game_state=door.target
+            break_function: bool=True
+            return break_function
+    return False
+
+def scene_fade_out(game,frozen):#fill black
+    fade_surface = pg.Surface(game.screen.get_size())
+    fade_surface = fade_surface.convert() # 為了更快的 blit 速度
+    fade_surface.fill((0, 0, 0)) # 填滿黑色
+    for alpha in range(0,86):
+        game.screen.blit(frozen, (0, 0))
+        fade_surface.set_alpha(alpha*3)
+        game.screen.blit(fade_surface, (0, 0))
+        pg.display.update()
+
+def scene_fade_in(game,frozen,blit:tuple[int,int]=(0,0)):#clean black
+    '''
+    :param blit: ? whats this?
+    '''
+    fade_surface = pg.Surface(game.screen.get_size())
+    fade_surface = fade_surface.convert() # 為了更快的 blit 速度
+    fade_surface.fill((0, 0, 0)) # 填滿黑色
+    for alpha in range(85,-1,-1):
+        game.screen.blit(frozen, blit)
+        fade_surface.set_alpha(alpha*3)
+        game.screen.blit(fade_surface, blit)
+        pg.display.update()
+
+def move_update(game,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list):
+    char.update(moveKeyQueue)
+    #2. 邊界判定
+    char.map_x,char.map_y=boundary_deter(char,bg,char.char_half)
+
+    #2.1 牆壁碰撞
+    char.map_x,char.map_y=wall_collision(char, wall_list,game.last_map_x,game.last_map_y)
+
+     # 3. 根據角色的世界座標計算攝影機的理想位置 (目標是讓角色保持在螢幕中央)
+    camera_x = char.map_x - game.w / 2#由 camera_x+w/2=map_x 推導而來
+    camera_y = char.map_y - game.h / 2#由 camera_y+h/2=map_y 推導而來
+
+    #4.1 將攝影機限制在地圖邊界內，避免顯示地圖外的黑色區域
+    if camera_x < 0:
+        camera_x = 0
+    elif camera_x > bg.map_w - game.w:
+        camera_x = bg.map_w - game.w
+    if camera_y < 0:
+        camera_y = 0
+    elif camera_y > bg.map_h - game.h:
+        camera_y = bg.map_h - game.h
+
+    # 4.2. 根據攝影機的位置，更新地圖的螢幕位置 (地圖的移動方向與攝影機相反)
+    bg.rect.x = -camera_x
+    bg.rect.y = -camera_y
+    game.screen.blit(bg.image,bg.rect)
+    #4.3
+    for npc in npc_list:
+        npc.update(camera_x,camera_y,game.w,game.h)
+        if npc.need_draw:
+            game.screen.blit(npc.image, npc.rect)
+    for wall in wall_list:
+        wall.update(camera_x,camera_y,game.w,game.h)
+        if wall.need_deter and wall.visible:
+            game.screen.blit(wall.image, wall.rect)
+    if door_update(game,char,door_list,camera_x,camera_y):return
+
+    # 6. 根據攝影機位置和角色的世界座標，計算角色在螢幕上的最終位置
+    char.rect.centerx = char.map_x - camera_x
+    char.rect.centery = char.map_y - camera_y
+
+    #draw
+    '''
+    put all object draw to their own update to avoid high complexity 
+    '''
+    game.screen.blit(char.image, char.rect)
+    pos_text=f"pos:({str(char.map_x)},{str(char.map_y)})"
+    pos_surface=font.pos.render(pos_text,True,game.rainbow_text_color.get_color())
+    game.screen.blit(pos_surface,(10,10))

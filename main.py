@@ -2,10 +2,12 @@ import pygame as pg
 import XddObjects as xo
 import setup
 import os
-import start_menu
+import start_menu,home
 
-main=xo.VAR
-start_menu_var=xo.VAR
+main=xo.VAR()
+start_menu_var=xo.VAR()
+home_var=xo.VAR()
+font=xo.VAR()
 
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
@@ -25,20 +27,29 @@ def main_initiate():
     main.menu_w,main.menu_h=bg_size_correction(main.w,main.h)
     main.screen = pg.display.set_mode((main.w,main.h))
     pg.display.set_caption("XDD's adventure")
+    main.rainbow_text_color = xo.ColorCycler(speed=0.08)
+    global font
+    font=setup.font_setup()
 
     #Variable initiation
     main.zoom_ratio=main.w/1920
     main.running=True
     main.is_pause=False
+    main.play_animation=False
     main.game_state= "start_menu"
     main.last_game_state= "start_menu"
     main.last_pause_state= "start_menu"
     main.MoveKeyQueue=[]
     main.InteractKeyQueue=[]
 
+    main.state_pos={}
+    main.state_pos["home"]=[5000,1500]
+
     setup.music_setup(main)
     global start_menu_var
     start_menu_var=start_menu.setup(main)
+    global home_var
+    home_var=home.setup(main)
 
 def bgm_manager():                         ##not finished
     if main.game_state == "pause_menu":
@@ -59,7 +70,7 @@ def bgm_manager():                         ##not finished
 
 if __name__ == "__main__":
     main_initiate()
-    print(main.zoom_ratio)
+    print("zoom ratio=",main.zoom_ratio)
     while main.running:
         main.clock.tick(main.fps)
 
@@ -91,6 +102,8 @@ if __name__ == "__main__":
         match main.game_state:
             case "start_menu":
                 start_menu.update(main,start_menu_var)
+            case "home":
+                home.update(main,font,home_var)
             case _:
                 print("no game state")
                 main.running=False
