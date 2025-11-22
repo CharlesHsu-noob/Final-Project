@@ -11,12 +11,12 @@ def setup(game:xo.VAR) -> xo.VAR :
     home.black_bg=pg.Surface(game.screen.get_size())
     home.black_bg.fill((0,0,0))
     #game.bg=xo.mapObject(pd.home_bg_path)
-    home.bg=xo.mapObject(pd.home_debug_bg_path,(0,0),(3430*1.2,1193*1.2))
+    home.bg=xo.mapObject(pd.home_debug_bg_path,(0,0),(3430*0.85,1193*0.85))
 
     game.char_u=xo.characterObject(pd.char_u_stand_path,
                                    pd.char_u_move_path,
                                    (100,100),
-                                   (300*ratio,400*ratio))#長寬好像相反?
+                                   (270*ratio,360*ratio))#長寬好像相反?
     game.char_u.map_x,game.char_u.map_y=game.state_pos["home"]
 
     home.cable=xo.npcObject(pd.cable_path,
