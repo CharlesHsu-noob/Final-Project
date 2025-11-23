@@ -218,7 +218,7 @@ class characterObject(pg.sprite.Sprite):
         self.moves=[]
         self.move_index=0
         self.flipx=0
-        self.flipy=0
+        #self.flipy=0 #cancel this
         try:
             for path in picture_paths_stand:
                 self.images.append(pg.transform.scale(
@@ -238,14 +238,18 @@ class characterObject(pg.sprite.Sprite):
             self.image = pg.Surface(size)
             self.image.fill((0, 255, 0)) # Green placeholder
         self.v=8
-        self.rect=self.image.get_rect(center=default_center)
+        centerx,centery=default_center #try
+
+        self.offset_y=-1*self.image.get_height()*0.2# dont touch this, not sure whether it fit to different PC
+        self.rect=self.image.get_rect(center=(centerx,centery))
         self.is_move=False
         self.move_state="left"
         self.mask=pg.mask.from_surface(self.image)
-        self.mask_rect=self.mask.get_rect(center=default_center)
+        self.mask_rect=self.mask.get_rect(center=(centerx,centery+self.offset_y))
         self.half_w=self.mask_rect.width/2
-        self.half_h=self.mask_rect.height/2
+        self.half_h=self.mask_rect.height/2+self.offset_y*1.4# dont touch this, not sure whether it fit to different PC
         self.char_half=[self.half_w,self.half_h]
+
     def update(self,pressKeyQueue):
         self.move_character = False
         self.is_move = False
@@ -261,13 +265,13 @@ class characterObject(pg.sprite.Sprite):
                 self.dy = -self.v
                 self.move_state = "up"
                 self.is_move = True
-                self.flipy = 1
+                #self.flipy = 1
             elif latest_key == pg.K_s:
                 self.map_y+=self.v
                 self.dy = self.v
                 self.move_state = "down"
                 self.is_move = True
-                self.flipy = 0
+                #self.flipy = 0
             elif latest_key == pg.K_a:
                 self.map_x-=self.v
                 self.dx = -self.v
@@ -286,14 +290,14 @@ class characterObject(pg.sprite.Sprite):
             self.move_index = 0
             
         if not self.is_move:
-            self.image = pg.transform.flip(self.images[0], self.flipx, self.flipy)
+            self.image = pg.transform.flip(self.images[0], self.flipx, 0)
             self.move_index = 0
         else:
             if self.move_index // 4 == 0 or self.move_index // 4 == 1:
                 real_index = 0
             elif self.move_index // 4 == 2 or self.move_index // 4 == 3:
                 real_index = 1
-            self.image = pg.transform.flip(self.moves[real_index], self.flipx, self.flipy)
+            self.image = pg.transform.flip(self.moves[real_index], self.flipx, 0)
             self.move_index += 1
 
         # 更新遮罩
@@ -303,6 +307,12 @@ class characterObject(pg.sprite.Sprite):
             self.last_move_state=self.move_state
             self.half_w=self.mask_rect.width/2
             self.half_h=self.mask_rect.height/2
+
+    def barrier_collision(self,wall_list):
+        for wall in wall_list:
+            if wall.need_deter and pg.sprite.collide_mask(self,wall):
+                return True
+        return False
 
 class npcObject(pg.sprite.Sprite):
     def __init__(self,picture_paths,center,size):
@@ -447,23 +457,33 @@ def draw_scene(game,bg,npc_list,door_list,char,wall_list):#依照圖層序排列
 
 
 def wall_collision(char,wall_list,last_map_x,last_map_y): #need rewrite
-    wall_rect_corretion_x=20#校正空氣牆
+    wall_rect_corretion_x=80#校正空氣牆
     wall_rect_corretion_y=3
+    hitbox_corr=1.8
     return_x=char.map_x
     return_y=char.map_y
     for wall in wall_list:
         if wall.need_deter:
+            '''
             if char.map_x+char.half_w>wall.map_x-wall.half_w +wall_rect_corretion_x and\
                 char.map_x-char.half_w<wall.map_x+wall.half_w -wall_rect_corretion_x and\
-                abs(char.map_y-wall.map_y)<char.half_h+wall.half_h -wall_rect_corretion_y:
+                abs(char.map_y-wall.map_y)<char.half_h+wall.half_h -wall_rect_corretion_y+char.offset_y:
                 return_x=last_map_x
-            if char.map_y+char.half_h>wall.map_y-wall.half_h +wall_rect_corretion_y and\
-                char.map_y-char.half_h<wall.map_y+wall.half_h -wall_rect_corretion_y and\
+            '''
+            if char.map_x+char.half_w>wall.map_x-wall.half_w +wall_rect_corretion_x and\
+                char.map_x-char.half_w<wall.map_x+wall.half_w -wall_rect_corretion_x :
+                k=char.map_y-wall.map_y
+                if (k>0 or k==0) and k<char.half_h+wall.half_h -wall_rect_corretion_y+char.offset_y*hitbox_corr:
+                    return_x=last_map_x
+                elif k<0 and k>-(char.half_h+wall.half_h -wall_rect_corretion_y+char.offset_y*hitbox_corr):
+                    return_x=last_map_x
+            if char.map_y+char.half_h>wall.map_y-wall.half_h +wall_rect_corretion_y-char.offset_y*hitbox_corr and\
+                char.map_y-char.half_h<wall.map_y+wall.half_h -wall_rect_corretion_y+char.offset_y*hitbox_corr and\
                 abs(char.map_x-wall.map_x)<char.half_w+wall.half_w -wall_rect_corretion_x:
                 return_y=last_map_y
     return return_x,return_y
 
-def boundary_deter(char,bg,char_half):
+def boundary_deter(char,bg,char_half:tuple[int,int]):
     return_x=char.map_x
     return_y=char.map_y
     if char.map_x < char_half[0]:
@@ -562,7 +582,7 @@ def move_update(game,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list):
 
     # 6. 根據攝影機位置和角色的世界座標，計算角色在螢幕上的最終位置
     char.rect.centerx = char.map_x - camera_x
-    char.rect.centery = char.map_y - camera_y
+    char.rect.centery = char.map_y - camera_y + char.offset_y
 
     #draw
     '''

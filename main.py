@@ -43,7 +43,7 @@ def main_initiate():
     main.InteractKeyQueue=[]
 
     main.state_pos={}
-    main.state_pos["home"]=[5000,1500]
+    main.state_pos["home"]=[2539,544]
 
     setup.music_setup(main)
     global start_menu_var

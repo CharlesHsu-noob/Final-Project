@@ -22,6 +22,9 @@ char_u_stand_path=[os.path.join("image","char","U","u_stand.png")]
 char_u_move_path=[os.path.join("image","char","U","u_s_r.png"),
                   os.path.join("image","char","U","u_s_l.png")]
 
+#universal object
+barrier_path=[os.path.join("image","map","150px-barrier.png")]
+
 #CH1-1 Home
 cable_path=[os.path.join("image","map","home","cable.png")]
 coat_path=[os.path.join("image","map","home","coat.png")]
