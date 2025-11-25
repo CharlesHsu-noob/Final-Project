@@ -1,3 +1,5 @@
+from operator import index
+
 import pygame as pg
 import random,math,os
 
@@ -286,16 +288,17 @@ class characterObject(pg.sprite.Sprite):
                 self.flipx = 1
         
         # 更新動畫
-        if self.move_index >= len(self.moves) * 7:
+        change_index=12
+        if self.move_index >= len(self.moves) * (change_index*2-1):
             self.move_index = 0
             
         if not self.is_move:
             self.image = pg.transform.flip(self.images[0], self.flipx, 0)
             self.move_index = 0
         else:
-            if self.move_index // 4 == 0 or self.move_index // 4 == 1:
+            if self.move_index // change_index == 0 or self.move_index // change_index == 1:
                 real_index = 0
-            elif self.move_index // 4 == 2 or self.move_index // 4 == 3:
+            elif self.move_index // change_index == 2 or self.move_index // change_index == 3:
                 real_index = 1
             self.image = pg.transform.flip(self.moves[real_index], self.flipx, 0)
             self.move_index += 1
@@ -501,20 +504,26 @@ def door_update(game,char,door_list,camera_x,camera_y) -> bool:
         door.update(camera_x,camera_y,game.w,game.h)
         if door.need_deter and door.visible:
             game.screen.blit(door.image, door.rect)
+
+
         if abs(door.rect.centerx-char.rect.centerx)<char.half_w and\
             abs(door.rect.centery-char.rect.centery)<char.half_h:
+            '''
+        if pg.sprite.collide_mask(char,door):
+            '''
+            print(f"Door detected at: ({char.map_x}, {char.map_y}), target: {door.target}")
             frozen=game.screen.copy()
             if char.move_state=="up":
-                char.map_y+=30
+                char.map_y+=40
             elif char.move_state=="down":
-                char.map_y-=30
+                char.map_y-=40
             if char.move_state=="left":
-                char.map_x+=30
+                char.map_x+=40
             elif char.move_state=="right":
-                char.map_x-=30
+                char.map_x-=40
             game.state_pos[game.game_state]=char.map_x,char.map_y
             char.map_x,char.map_y=game.state_pos[door.target]
-            scene_fade_out(frozen)
+            scene_fade_out(game,frozen)
             game.game_state=door.target
             break_function: bool=True
             return break_function

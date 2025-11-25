@@ -24,9 +24,19 @@ char_u_move_path=[os.path.join("image","char","U","u_s_r.png"),
 
 #universal object
 barrier_path=[os.path.join("image","map","150px-barrier.png")]
+door_path=[os.path.join("image","map","door.png")]
 
 #CH1-1 Home
 cable_path=[os.path.join("image","map","home","cable.png")]
 coat_path=[os.path.join("image","map","home","coat.png")]
 crayon_path=[os.path.join("image","map","home","crayon.png")]
 paper_path=[os.path.join("image","map","home","paper.png")]
+
+#ch1-2 forest
+forest_path={
+    "a":os.path.join("image","map","forest","forest_a.png"),
+    "b":os.path.join("image","map","forest","forest_b.png"),
+    "c":os.path.join("image","map","forest","forest_c.png"),
+    "d":os.path.join("image", "map", "forest","forest_d.png"),
+    "sign":os.path.join("image","map","forest","forest_sign.png")
+}

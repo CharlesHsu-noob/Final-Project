@@ -126,7 +126,13 @@ def setup(game:xo.VAR) -> xo.VAR :
                                          (home.bg.rect.width * 0.36, 150),
                                          wall_visible)
     home.wall_list.append(home.wall_down_left)
-
+    #door
+    home.door_forest_a=xo.doorObject(pd.door_path,
+                                     (980,960),
+                                     (100,50),
+                                     "forest_a",
+                                     True)
+    home.door_list.append(home.door_forest_a)
     return home
 
 def update(game,font,home) -> None:
@@ -142,7 +148,7 @@ def update(game,font,home) -> None:
         home.bg,
         home.npc_list,
         home.wall_list,
-        []
+        home.door_list
     )
 
 
