@@ -1,7 +1,7 @@
 import pygame as pg
 import XddObjects as xo
 import setup
-import start_menu,home,forest_a
+import start_menu,home,forest_a,forest_b
 
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
@@ -30,20 +30,26 @@ def main_initiate():
     main.running=True
     main.is_pause=False
     main.play_animation=False
-    main.game_state= "start_menu"
-    main.last_game_state= "start_menu"
-    main.last_pause_state= "start_menu"
+    #for debug------v----
+    global scene
+    initial_state="forest_a"
+    scene["forest_a_var"]=forest_a.setup(main)
+    #for debug------^----
+    main.game_state= initial_state
+    main.last_game_state= initial_state
+    main.last_pause_state= initial_state
     main.MoveKeyQueue=[]
     main.InteractKeyQueue=[]
 
     main.state_pos={}
     main.state_pos["home"]=[2539,544]
     main.state_pos["forest_a"]=[1619,550]
+    main.state_pos["forest_b"]=[2280,718]
 
     setup.music_setup(main)
     global start_menu_var
     start_menu_var=start_menu.setup(main)
-    global scene
+    #global scene
     scene["home_var"]=home.setup(main)
     #global forest_a_var
     #forest_a_var=forest_a.setup(main)
@@ -71,7 +77,8 @@ if __name__ == "__main__":
     start_menu_var = xo.VAR()
     scene={
         "home_var":xo.VAR(),
-        "forest_a_var":xo.VAR()
+        "forest_a_var":xo.VAR(),
+        "forest_b_var":xo.VAR()
     }
     #forest_a_var=xo.VAR()
     main_initiate()
@@ -117,6 +124,8 @@ if __name__ == "__main__":
                 scene=home.update(main,scene,font,scene["home_var"])
             case "forest_a":
                 scene=forest_a.update(main,scene,font,scene["forest_a_var"])
+            case "forest_b":
+                scene=forest_b.update(main,scene,font,scene["forest_b_var"])
             case _:
                 print("no game state")
                 main.running=False

@@ -129,9 +129,9 @@ def setup(game:xo.VAR) -> xo.VAR :
     #door
     home.door_forest_a=xo.doorObject(pd.door_path,
                                      (980,980),
-                                     (100,50),
+                                     (150,50),
                                      "forest_a",
-                                     True)
+                                     False)
     home.door_list.append(home.door_forest_a)
     return home
 

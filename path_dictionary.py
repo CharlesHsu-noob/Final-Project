@@ -38,5 +38,5 @@ forest_path={
     "b":os.path.join("image","map","forest","forest_b.png"),
     "c":os.path.join("image","map","forest","forest_c.png"),
     "d":os.path.join("image", "map", "forest","forest_d.png"),
-    "sign":os.path.join("image","map","forest","forest_sign.png")
+    "sign":[os.path.join("image","map","forest","forest_sign.png")]
 }
