@@ -1,14 +1,7 @@
 import pygame as pg
 import XddObjects as xo
 import setup
-import os
 import start_menu,home,forest_a
-
-main=xo.VAR()
-start_menu_var=xo.VAR()
-home_var=xo.VAR()
-forest_a_var=xo.VAR()
-font=xo.VAR()
 
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
@@ -45,17 +38,17 @@ def main_initiate():
 
     main.state_pos={}
     main.state_pos["home"]=[2539,544]
-    main.state_pos["forest_a"]=[1619,470]
+    main.state_pos["forest_a"]=[1619,550]
 
     setup.music_setup(main)
     global start_menu_var
     start_menu_var=start_menu.setup(main)
-    global home_var
-    home_var=home.setup(main)
-    global forest_a_var
-    forest_a_var=forest_a.setup(main)
+    global scene
+    scene["home_var"]=home.setup(main)
+    #global forest_a_var
+    #forest_a_var=forest_a.setup(main)
 
-def bgm_manager():                         ##not finished
+def bgm_manager():                         ##not finished i need to add volume change code
     if main.game_state == "pause_menu":
         return
     target_music = main.music_playlist.get(main.game_state)
@@ -73,6 +66,14 @@ def bgm_manager():                         ##not finished
         main.current_music = None
 
 if __name__ == "__main__":
+    main = xo.VAR()
+    font = xo.VAR()
+    start_menu_var = xo.VAR()
+    scene={
+        "home_var":xo.VAR(),
+        "forest_a_var":xo.VAR()
+    }
+    #forest_a_var=xo.VAR()
     main_initiate()
     print("zoom ratio=",main.zoom_ratio)
     while main.running:
@@ -103,19 +104,19 @@ if __name__ == "__main__":
 
         bgm_manager()
 
-        play_animation = False
+        main.play_animation = False
         if main.last_game_state != main.game_state and \
                 main.last_game_state != "pause_menu":
-            play_animation = True
+            main.play_animation = True
         main.last_game_state = main.game_state
 
         match main.game_state:
             case "start_menu":
                 start_menu.update(main,start_menu_var)
             case "home":
-                home.update(main,font,home_var)
+                scene=home.update(main,scene,font,scene["home_var"])
             case "forest_a":
-                forest_a.update(main,font,forest_a_var)
+                scene=forest_a.update(main,scene,font,scene["forest_a_var"])
             case _:
                 print("no game state")
                 main.running=False

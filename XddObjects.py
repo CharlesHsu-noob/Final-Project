@@ -1,7 +1,7 @@
 from operator import index
 
 import pygame as pg
-import random,math,os
+import random,math,os,importlib
 
 from pygame import Surface
 
@@ -29,6 +29,9 @@ class VAR:
         make it easy to transform data between in multiple files
         '''
         pass
+    def suicide(self):
+        print("class:" + type(self).__name__ + " is cleared.")
+        self.__dict__.clear()
 
 def collision_by_mask_with_mouse(rect,mask):
     mouse_pos = pg.mouse.get_pos()
@@ -499,18 +502,18 @@ def boundary_deter(char,bg,char_half:tuple[int,int]):
         return_y = bg.map_h - char_half[1]
     return return_x,return_y
 
-def door_update(game,char,door_list,camera_x,camera_y) -> bool:
+def door_update(game,scene:dict,char,door_list,camera_x,camera_y) -> tuple[bool,dict]:
     for door in door_list:
         door.update(camera_x,camera_y,game.w,game.h)
         if door.need_deter and door.visible:
             game.screen.blit(door.image, door.rect)
 
-
+            '''
         if abs(door.rect.centerx-char.rect.centerx)<char.half_w and\
             abs(door.rect.centery-char.rect.centery)<char.half_h:
             '''
         if pg.sprite.collide_mask(char,door):
-            '''
+
             print(f"Door detected at: ({char.map_x}, {char.map_y}), target: {door.target}")
             frozen=game.screen.copy()
             if char.move_state=="up":
@@ -524,10 +527,26 @@ def door_update(game,char,door_list,camera_x,camera_y) -> bool:
             game.state_pos[game.game_state]=char.map_x,char.map_y
             char.map_x,char.map_y=game.state_pos[door.target]
             scene_fade_out(game,frozen)
+            scene=mem_manager(game,scene,game.game_state,door.target)
             game.game_state=door.target
+
             break_function: bool=True
-            return break_function
-    return False
+            return break_function,scene
+    return False,scene
+
+def mem_manager(game:VAR,scene:dict,source:str,target:str) -> dict :
+    #clear the old scene var
+    source_class_name = source + "_var"
+    scene[source_class_name].suicide()
+    scene[source_class_name] = None
+    #create a new scene var
+    tar_var_name= target + "_var"
+    scene[tar_var_name]=VAR()
+    tar_module=importlib.import_module(target)
+    tar_setup=getattr(tar_module, "setup")
+    scene[tar_var_name]=tar_setup(game)
+
+    return scene
 
 def scene_fade_out(game,frozen):#fill black
     fade_surface = pg.Surface(game.screen.get_size())
@@ -552,7 +571,7 @@ def scene_fade_in(game,frozen,blit:tuple[int,int]=(0,0)):#clean black
         game.screen.blit(fade_surface, blit)
         pg.display.update()
 
-def move_update(game,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list):
+def move_update(game:VAR,scene:dict,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list) -> dict:
     char.update(moveKeyQueue)
     #2. 邊界判定
     char.map_x,char.map_y=boundary_deter(char,bg,char.char_half)
@@ -587,7 +606,8 @@ def move_update(game,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list):
         wall.update(camera_x,camera_y,game.w,game.h)
         if wall.need_deter and wall.visible:
             game.screen.blit(wall.image, wall.rect)
-    if door_update(game,char,door_list,camera_x,camera_y):return
+    breakfun,scene=door_update(game,scene,char,door_list,camera_x,camera_y)
+    if breakfun:return scene
 
     # 6. 根據攝影機位置和角色的世界座標，計算角色在螢幕上的最終位置
     char.rect.centerx = char.map_x - camera_x
@@ -601,3 +621,4 @@ def move_update(game,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list):
     pos_text=f"pos:({str(char.map_x)},{str(char.map_y)})"
     pos_surface=font.pos.render(pos_text,True,game.rainbow_text_color.get_color())
     game.screen.blit(pos_surface,(10,10))
+    return scene

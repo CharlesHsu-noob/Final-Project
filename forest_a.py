@@ -18,20 +18,21 @@ def setup(game:xo.VAR) ->xo.VAR:
 
     #door
     forest_a.door_home=xo.doorObject(pd.door_path,
-                                         (1700,350),
+                                         (1600,350),
                                          (50,50),
                                          "home",
                                          True)
     forest_a.door_list.append(forest_a.door_home)
     return forest_a
 
-def update(game:xo.VAR,font,forest_a:xo.VAR) -> None:
+def update(game:xo.VAR,scene:dict,font,forest_a:xo.VAR) -> dict:
     movequeue: list = game.MoveKeyQueue
     game.last_map_x = game.char_u.map_x
     game.last_map_y = game.char_u.map_y
     game.screen.blit(forest_a.black_bg, (0, 0))
     xo.move_update(
         game,
+        scene,
         font,
         game.char_u,
         movequeue,
@@ -52,3 +53,5 @@ def update(game:xo.VAR,font,forest_a:xo.VAR) -> None:
         frozen = game.screen.copy()
         xo.scene_fade_in(game, frozen)
         game.play_animation = False
+
+    return scene
