@@ -38,5 +38,10 @@ forest_path={
     "b":os.path.join("image","map","forest","forest_b.png"),
     "c":os.path.join("image","map","forest","forest_c.png"),
     "d":os.path.join("image", "map", "forest","forest_d.png"),
-    "sign":[os.path.join("image","map","forest","forest_sign.png")]
+    "f":os.path.join("image","map","forest","forest_f.png"),
+    "g":os.path.join("image","map","forest","forest_g.png"),
+    "h":os.path.join("image","map","forest","forest_h.png"),
+    "sign":[os.path.join("image","map","forest","forest_sign.png")],
+    "boat":[os.path.join("image","map","forest","forest_boat.png")],
+    "rock":[os.path.join("image","map","forest","forest_rock.png")]
 }

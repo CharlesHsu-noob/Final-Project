@@ -242,7 +242,7 @@ class characterObject(pg.sprite.Sprite):
         except pg.error:
             self.image = pg.Surface(size)
             self.image.fill((0, 255, 0)) # Green placeholder
-        self.v=8
+        self.v=16#8
         centerx,centery=default_center #try
 
         self.offset_y=-1*self.image.get_height()*0.2# dont touch this, not sure whether it fit to different PC
@@ -492,10 +492,10 @@ def wall_collision(char,wall_list,last_map_x,last_map_y): #need rewrite
 def boundary_deter(char,bg,char_half:tuple[int,int]):
     return_x=char.map_x
     return_y=char.map_y
-    if char.map_x < char_half[0]:
-        return_x = char_half[0]
-    elif char.map_x > bg.map_w - char_half[0]:
-        return_x = bg.map_w - char_half[0]
+    if char.map_x < char_half[0]+char.offset_y:
+        return_x = char_half[0]+char.offset_y
+    elif char.map_x > bg.map_w - char_half[0]-char.offset_y:
+        return_x = bg.map_w - char_half[0]-char.offset_y
     if char.map_y < char_half[1]:
         return_y = char_half[1]
     elif char.map_y > bg.map_h - char_half[1]:
@@ -504,7 +504,7 @@ def boundary_deter(char,bg,char_half:tuple[int,int]):
 
 def door_update(game,scene:dict,char,door_list,camera_x,camera_y) -> tuple[bool,dict]:
     for door in door_list:
-        door.update(camera_x,camera_y,game.w,game.h)
+        door.update(camera_x, camera_y, game.w, game.h)
         if door.need_deter and door.visible:
             game.screen.blit(door.image, door.rect)
 
@@ -571,7 +571,7 @@ def scene_fade_in(game,frozen,blit:tuple[int,int]=(0,0)):#clean black
         game.screen.blit(fade_surface, blit)
         pg.display.update()
 
-def move_update(game:VAR,scene:dict,font,char,moveKeyQueue,bg,npc_list,wall_list,door_list) -> dict:
+def move_update(game:VAR,scene:dict,font,char:characterObject,moveKeyQueue,bg,npc_list,wall_list,door_list) -> dict:
     char.update(moveKeyQueue)
     #2. 邊界判定
     char.map_x,char.map_y=boundary_deter(char,bg,char.char_half)
@@ -599,11 +599,11 @@ def move_update(game:VAR,scene:dict,font,char,moveKeyQueue,bg,npc_list,wall_list
     game.screen.blit(bg.image,bg.rect)
     #4.3
     for npc in npc_list:
-        npc.update(camera_x,camera_y,game.w,game.h)
+        npc.update(camera_x, camera_y, game.w, game.h)
         if npc.need_draw:
             game.screen.blit(npc.image, npc.rect)
     for wall in wall_list:
-        wall.update(camera_x,camera_y,game.w,game.h)
+        wall.update(camera_x, camera_y, game.w, game.h)
         if wall.need_deter and wall.visible:
             game.screen.blit(wall.image, wall.rect)
     breakfun,scene=door_update(game,scene,char,door_list,camera_x,camera_y)

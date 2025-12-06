@@ -1,7 +1,7 @@
 import pygame as pg
 import XddObjects as xo
 import setup
-import start_menu,home,forest_a,forest_b
+import start_menu,home,forest_a,forest_b,forest_c,forest_d
 
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
@@ -30,14 +30,7 @@ def main_initiate():
     main.running=True
     main.is_pause=False
     main.play_animation=False
-    #for debug------v----
-    global scene
-    initial_state="forest_a"
-    scene["forest_a_var"]=forest_a.setup(main)
-    #for debug------^----
-    main.game_state= initial_state
-    main.last_game_state= initial_state
-    main.last_pause_state= initial_state
+
     main.MoveKeyQueue=[]
     main.InteractKeyQueue=[]
 
@@ -45,23 +38,43 @@ def main_initiate():
     main.state_pos["home"]=[2539,544]
     main.state_pos["forest_a"]=[1619,550]
     main.state_pos["forest_b"]=[2280,718]
+    main.state_pos["forest_c"]=[3840,750]
+    main.state_pos["forest_d"]=[1380,570]
 
     setup.music_setup(main)
     global start_menu_var
     start_menu_var=start_menu.setup(main)
     #global scene
+    # for debug------v----
+    global scene
+    initial_state = "forest_a"
+    scene["forest_a_var"] = forest_a.setup(main)
+    # for debug------^----
     scene["home_var"]=home.setup(main)
-    #global forest_a_var
-    #forest_a_var=forest_a.setup(main)
+
+    main.char_u.map_x,main.char_u.map_y=main.state_pos[initial_state]
+
+    main.game_state = initial_state
+    main.last_game_state = initial_state
+    main.last_pause_state = initial_state
 
 def bgm_manager():                         ##not finished i need to add volume change code
     if main.game_state == "pause_menu":
         return
+    elif main.last_game_state.find("forest") !=-1 and\
+        main.game_state.find("forest") !=-1:
+        return
     target_music = main.music_playlist.get(main.game_state)
+    ''' add this will cause a huge lag!
+    if main.last_game_state.find("forest") ==-1 and\
+        main.game_state.find("forest") !=-1:
+        target_music=main.music_playlist.get("forest")
+    no good solution yet
+    '''
     #pg.mixer.music.set_volume(main.volume_twist.current_val)
     #add later
     pg.mixer.music.set_volume(0.5)
-    if target_music and target_music != main.current_music:
+    if target_music and (target_music != main.current_music):
         pg.mixer.music.fadeout(1000)  # 淡出舊音樂
         pg.mixer.music.load(target_music)
         pg.mixer.music.play(loops=-1, fade_ms=1500) # 播放新音樂
@@ -78,7 +91,9 @@ if __name__ == "__main__":
     scene={
         "home_var":xo.VAR(),
         "forest_a_var":xo.VAR(),
-        "forest_b_var":xo.VAR()
+        "forest_b_var":xo.VAR(),
+        "forest_c_var":xo.VAR(),
+        "forest_d_var":xo.VAR()
     }
     #forest_a_var=xo.VAR()
     main_initiate()
@@ -125,7 +140,11 @@ if __name__ == "__main__":
             case "forest_a":
                 scene=forest_a.update(main,scene,font,scene["forest_a_var"])
             case "forest_b":
-                scene=forest_b.update(main,scene,font,scene["forest_b_var"])
+                scene= forest_b.update(main, scene, font, scene["forest_b_var"])
+            case "forest_c":
+                scene=forest_c.update(main,scene,font,scene["forest_c_var"])
+            case "forest_d":
+                scene=forest_d.update(main,scene,font,scene["forest_d_var"])
             case _:
                 print("no game state")
                 main.running=False

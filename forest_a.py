@@ -17,8 +17,8 @@ def setup(game:xo.VAR) ->xo.VAR:
     #game.char_u.map_x, game.char_u.map_y = game.state_pos["forest_a"]
     #npc_object
     forest_a.sign=xo.npcObject(pd.forest_path["sign"],
-                               (2370,520),
-                               (115*1.8*ratio,164*1.8*ratio))
+                               (2060,555),
+                               (115*1.3*ratio,164*1.3*ratio))
     forest_a.npc_list.append(forest_a.sign)
     #door
     forest_a.door_home=xo.doorObject(pd.door_path,
@@ -28,8 +28,8 @@ def setup(game:xo.VAR) ->xo.VAR:
                                          False)
     forest_a.door_list.append(forest_a.door_home)
     forest_a.door_forest_b=xo.doorObject(pd.door_path,
-                                         (40,forest_a.bg.rect.height*0.65),
-                                         (80,forest_a.bg.rect.height*0.3),
+                                         (0,forest_a.bg.rect.height*0.65),
+                                         (30,forest_a.bg.rect.height*0.3),
                                          "forest_b",
                                          True)
     forest_a.door_list.append(forest_a.door_forest_b)
