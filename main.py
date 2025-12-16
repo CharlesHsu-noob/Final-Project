@@ -46,15 +46,17 @@ def main_initiate():
     start_menu_var=start_menu.setup(main)
     #global scene
     # for debug------v----
+    '''
     global scene
-    initial_state = "forest_a"
-    scene["forest_a_var"] = forest_a.setup(main)
+    initial_state = "home"
+    scene["start_menu_var"] = start_menu.setup(main)
+    '''
     # for debug------^----
     scene["home_var"]=home.setup(main)
-
+    initial_state = "home"
     main.char_u.map_x,main.char_u.map_y=main.state_pos[initial_state]
 
-    main.game_state = initial_state
+    main.game_state = "start_menu"
     main.last_game_state = initial_state
     main.last_pause_state = initial_state
 

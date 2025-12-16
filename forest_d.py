@@ -8,14 +8,16 @@ def setup(game:xo.VAR) ->xo.VAR:
     forest_d.wall_list=[]
     forest_d.door_list=[]
     ratio=game.zoom_ratio
-    wall_visible=False
+    wall_visible=True
 
     forest_d.black_bg = pg.Surface(game.screen.get_size())
     forest_d.black_bg.fill((0, 0, 0))
-    forest_d.bg=xo.mapObject(pd.forest_path["d"], (0, 0), (1920 * 0.8, 1080 * 0.8))
+    forest_d.bg=xo.mapObject(pd.forest_d_debug_path,(0,0),(2133*0.72,1200*0.72))
+    #forest_d.bg=xo.mapObject(pd.forest_path["d"], (0, 0), (1920 * 0.8, 1080 * 0.8))
 
     #game.char_u.map_x, game.char_u.map_y = game.state_pos["forest_b"]
     #npc_object
+
     forest_d.boat=xo.npcObject(pd.forest_path["boat"],
                                (675,500),
                                (156*1.6*ratio,341*1.6*ratio))

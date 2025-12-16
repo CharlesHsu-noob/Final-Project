@@ -5,6 +5,7 @@ import pygame as pg
 #background
 start_menu_bg_path=os.path.join("image","menu","start_menu","main_bg.png")
 home_bg_path=os.path.join("image","map","home","home_bg.png")
+forest_d_debug_path=os.path.join("image","map","forest","forest_d_edit.png")
 
 #debug background
 home_debug_bg_path=os.path.join("image","map","home","home_bg_debug.png")

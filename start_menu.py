@@ -10,10 +10,10 @@ def setup(game:xo.VAR) -> xo.VAR :
     start.bg=pg.transform.scale(pg.image.load(pd.start_menu_bg_path).convert_alpha(),
                                 (game.menu_w,game.menu_h))
     start.lamp=xo.buttonObject(pd.lamp_path,
-                               (1150,250),
+                               (0.838*game.menu_w,0.338*game.menu_h),
                                (318*game.zoom_ratio,438*game.zoom_ratio))
     start.notebook=xo.buttonObject(pd.notebook_path,
-                                   (850,550),
+                                   (0.642*game.menu_w,0.731*game.menu_h),
                                    (255*game.zoom_ratio,290*game.zoom_ratio))
     start.button_list.append(start.lamp)
     start.button_list.append(start.notebook)
