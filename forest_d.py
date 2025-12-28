@@ -8,7 +8,7 @@ def setup(game:xo.VAR) ->xo.VAR:
     forest_d.wall_list=[]
     forest_d.door_list=[]
     ratio=game.zoom_ratio
-    wall_visible=True
+    wall_visible=False
 
     forest_d.black_bg = pg.Surface(game.screen.get_size())
     forest_d.black_bg.fill((0, 0, 0))
@@ -58,7 +58,7 @@ def setup(game:xo.VAR) ->xo.VAR:
                                          (forest_d.bg.rect.width, forest_d.bg.rect.height * 0.67),
                                          (30, forest_d.bg.rect.height * 0.32),
                                         "forest_c",
-                                         True)
+                                         False)
     forest_d.door_list.append(forest_d.door_forest_c)
 
     return forest_d

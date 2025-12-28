@@ -8,18 +8,38 @@ def setup(game:xo.VAR) ->xo.VAR:
     forest_a.wall_list=[]
     forest_a.door_list=[]
     ratio=game.zoom_ratio
-    wall_visible=True
+    wall_visible=False
 
     forest_a.black_bg = pg.Surface(game.screen.get_size())
     forest_a.black_bg.fill((0, 0, 0))
     forest_a.bg=xo.mapObject(pd.forest_path["a"],(0,0),(2800*1,1300*1))
 
     #game.char_u.map_x, game.char_u.map_y = game.state_pos["forest_a"]
+
     #npc_object
     forest_a.sign=xo.npcObject(pd.forest_path["sign"],
                                (2060,555),
                                (115*1.3*ratio,164*1.3*ratio))
     forest_a.npc_list.append(forest_a.sign)
+    #wall
+    forest_a.wall_bottom=xo.wallObject(pd.barrier_path,
+                                       0,
+                                       (forest_a.bg.rect.width*0.5, 1185),
+                                       (forest_a.bg.rect.width, 300),
+                                       wall_visible)
+    forest_a.wall_list.append(forest_a.wall_bottom)
+    forest_a.wall_top_left=xo.wallObject(pd.barrier_path,
+                                       0,
+                                       (643, 278),
+                                       (1700, 700),
+                                       wall_visible)
+    forest_a.wall_list.append(forest_a.wall_top_left)
+    forest_a.wall_top_right=xo.wallObject(pd.barrier_path,
+                                       0,
+                                       (2387, 278),
+                                       (1300, 700),
+                                       wall_visible)
+    forest_a.wall_list.append(forest_a.wall_top_right)
     #door
     forest_a.door_home=xo.doorObject(pd.door_path,
                                          (1600,350),
@@ -31,7 +51,7 @@ def setup(game:xo.VAR) ->xo.VAR:
                                          (0,forest_a.bg.rect.height*0.65),
                                          (30,forest_a.bg.rect.height*0.3),
                                          "forest_b",
-                                         True)
+                                         False)
     forest_a.door_list.append(forest_a.door_forest_b)
     return forest_a
 

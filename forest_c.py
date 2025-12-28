@@ -8,7 +8,7 @@ def setup(game:xo.VAR) ->xo.VAR:
     forest_c.wall_list=[]
     forest_c.door_list=[]
     ratio=game.zoom_ratio
-    wall_visible=True
+    wall_visible=False
 
     forest_c.black_bg = pg.Surface(game.screen.get_size())
     forest_c.black_bg.fill((0, 0, 0))
@@ -17,18 +17,37 @@ def setup(game:xo.VAR) ->xo.VAR:
     #game.char_u.map_x, game.char_u.map_y = game.state_pos["forest_b"]
     #npc_object
 
+    #wall
+    forest_c.wall_top_right=xo.wallObject(pd.barrier_path,
+                                       0,
+                                        (2780, 220),
+                                       (2300, 500),
+                                        wall_visible)
+    forest_c.wall_list.append(forest_c.wall_top_right)
+    forest_c.wall_top_left=xo.wallObject(pd.barrier_path,
+                                       0,
+                                       (170, 220),
+                                       (2300, 500),
+                                        wall_visible)
+    forest_c.wall_list.append(forest_c.wall_top_left)
+    forest_c.wall_bottom=xo.wallObject(pd.barrier_path,
+                                       0,
+                                        (2000, 1000),
+                                       (4000, 300),
+                                        wall_visible)
+    forest_c.wall_list.append(forest_c.wall_bottom)
     #door
     forest_c.door_forest_b=xo.doorObject(pd.door_path,
-                                         (forest_c.bg.rect.width, forest_c.bg.rect.height * 0.67),
-                                         (30, forest_c.bg.rect.height * 0.32),
+                                         (4000, 697),
+                                         (30, 333),
                                         "forest_b",
-                                         True)
+                                         False)
     forest_c.door_list.append(forest_c.door_forest_b)
     forest_c.door_forest_d=xo.doorObject(pd.door_path,
-                                         (0, forest_c.bg.rect.height * 0.67),
-                                         (30, forest_c.bg.rect.height * 0.3),
+                                         (0, 697),
+                                         (30, 333),
                                          "forest_d",
-                                         True)
+                                         False)
     forest_c.door_list.append(forest_c.door_forest_d)
     return forest_c
 

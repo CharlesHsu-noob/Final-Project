@@ -1,7 +1,7 @@
 import pygame as pg
 import XddObjects as xo
 import setup
-import start_menu,home,forest_a,forest_b,forest_c,forest_d
+import start_menu,home,forest_a,forest_b,forest_c,forest_d,forest_f,forest_g,forest_h
 
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
@@ -40,23 +40,28 @@ def main_initiate():
     main.state_pos["forest_b"]=[2280,718]
     main.state_pos["forest_c"]=[3840,750]
     main.state_pos["forest_d"]=[1380,570]
+    main.state_pos["forest_f"]=[1900,690]
+    main.state_pos["forest_g"]=[3750,750]
+    main.state_pos["forest_h"]=[2180,672]
+
 
     setup.music_setup(main)
     global start_menu_var
     start_menu_var=start_menu.setup(main)
     #global scene
     # for debug------v----
-    '''
+
     global scene
-    initial_state = "home"
-    scene["start_menu_var"] = start_menu.setup(main)
-    '''
+    initial_state = "forest_g"
+    scene["forest_g_var"] = forest_g.setup(main)
+    main.game_state = initial_state
+
     # for debug------^----
     scene["home_var"]=home.setup(main)
-    initial_state = "home"
+    #initial_state = "home"
     main.char_u.map_x,main.char_u.map_y=main.state_pos[initial_state]
 
-    main.game_state = "start_menu"
+    #main.game_state = "start_menu"
     main.last_game_state = initial_state
     main.last_pause_state = initial_state
 
@@ -95,7 +100,10 @@ if __name__ == "__main__":
         "forest_a_var":xo.VAR(),
         "forest_b_var":xo.VAR(),
         "forest_c_var":xo.VAR(),
-        "forest_d_var":xo.VAR()
+        "forest_d_var":xo.VAR(),
+        "forest_f_var":xo.VAR(),
+        "forest_g_var":xo.VAR(),
+        "forest_h_var":xo.VAR(),
     }
     #forest_a_var=xo.VAR()
     main_initiate()
@@ -147,6 +155,12 @@ if __name__ == "__main__":
                 scene=forest_c.update(main,scene,font,scene["forest_c_var"])
             case "forest_d":
                 scene=forest_d.update(main,scene,font,scene["forest_d_var"])
+            case "forest_f":
+                scene=forest_f.update(main,scene,font,scene["forest_f_var"])
+            case "forest_g":
+                scene=forest_g.update(main,scene,font,scene["forest_g_var"])
+            case "forest_h":
+                scene=forest_h.update(main,scene,font,scene["forest_h_var"])
             case _:
                 print("no game state")
                 main.running=False
