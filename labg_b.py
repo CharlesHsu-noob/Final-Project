@@ -13,7 +13,7 @@ WIDTH, HEIGHT = 1920, 1080
 FPS = 60
 PLAYER_SPEED = 300  # 平滑移動速度（px/sec）
 OFFSET_X = 330
-OFFSET_Y = 65       # 保留這關原本的 Offset 設定
+OFFSET_Y = 66
 # 動畫速度控制 (毫秒 ms)
 ANIMATION_DELAY = 150 
 
@@ -30,27 +30,17 @@ YELLOW = (235, 210, 80)
 font = pg.font.SysFont("Microsoft JhengHei", 18)
 
 screen = pg.display.set_mode((WIDTH, HEIGHT))
-pg.display.set_caption("Bob - Obstacle Level")
+pg.display.set_caption("Bob")
 
 clock = pg.time.Clock()
 
-# --- 載入背景 (這關特定的背景) ---
+# --- 載入背景 ---
 try:
-    bg_img = pg.image.load(os.path.join('image', 'labb_c.png')).convert()
+    bg_img = pg.image.load(os.path.join('image', 'labg_b.png')).convert()
     bg_img = pg.transform.scale(bg_img, (WIDTH, HEIGHT))
 except:
     bg_img = pg.Surface((WIDTH, HEIGHT))
     bg_img.fill(WHITE)
-
-# --- 障礙物提示圖片 ---
-try:
-    obstacle_img_raw = pg.image.load(
-        os.path.join('image', 'lab_crystal.png')
-    ).convert_alpha()
-except:
-    obstacle_img_raw = None
-
-
 
 # --- 雷射發射器圖片 ---
 try:
@@ -88,12 +78,27 @@ try:
 except:
     pass
 
-# --- 終點圖片 ---
+# --- 終點圖片與通過圖片 ---
 try:
     goal_img_raw = pg.image.load(os.path.join('image', 'lab_detector.png')).convert_alpha()
-    goal_img = pg.transform.scale(goal_img_raw, (GRID_SIZE, GRID_SIZE))
+    try:
+        content_rect = goal_img_raw.get_bounding_rect(min_alpha=1)
+        goal_img_cropped = goal_img_raw.subsurface(content_rect).copy()
+    except:
+        goal_img_cropped = goal_img_raw
+    goal_img = pg.transform.smoothscale(goal_img_cropped, (GRID_SIZE, GRID_SIZE))
 except:
     goal_img = None
+try:
+    goal_pass_raw = pg.image.load(os.path.join('image', 'lab_detector_pass.png')).convert_alpha()
+    try:
+        content_rect2 = goal_pass_raw.get_bounding_rect(min_alpha=1)
+        goal_pass_cropped = goal_pass_raw.subsurface(content_rect2).copy()
+    except:
+        goal_pass_cropped = goal_pass_raw
+    goal_img_pass = pg.transform.smoothscale(goal_pass_cropped, (GRID_SIZE, GRID_SIZE))
+except:
+    goal_img_pass = None
 
 # ==========================================
 # 載入玩家圖片序列並等比例縮放
@@ -194,47 +199,32 @@ class Player:
     # [新增] 手部判定座標
     @property
     def hand_pos(self):
+        # 1. 取得圖片高度
         h = PLAYER_TARGET_HEIGHT
-        # 手部在圖片中的位置 = 頂部 + 65% 高度
+        
+        # 2. 圖片繪製的頂部 Y 座標 (draw_y) = self.y - h // 2
+        # 3. 手部在圖片中的位置 = 頂部 + 65% 高度
         hand_y = (self.y - h // 2) + (h * 0.65)
+        
+        # X 軸保持中心，Y 軸使用手部位置
         return (int(self.x), int(hand_y))
 
     def update_logic_position(self):
         self.col = int((self.x - OFFSET_X) // GRID_SIZE)
         self.row = int((self.y - OFFSET_Y) // GRID_SIZE)
 
-# ----------------- 建地圖 & 障礙物設定 -----------------
-# 障礙物 Rect (這關特有)
-obstacle_rect = pg.Rect(488, 462, 235, 77)
-# 根據障礙物大小縮放圖片
-if obstacle_img_raw:
-    obstacle_img = pg.transform.scale(
-        obstacle_img_raw,
-        (obstacle_rect.width, obstacle_rect.height)
-    )
-else:
-    obstacle_img = None
-
-
+# ----------------- 建地圖 -----------------
 grid = [[Tile(c, r) for r in range(ROWS)] for c in range(COLS)]
 
-# 禁止放置鏡子的格子（障礙物區域）
-for c in range(COLS):
-    for r in range(ROWS):
-        t = grid[c][r]
-        if obstacle_rect.collidepoint(t.center):
-            t.can_place = False
-
-# 示範鏡子 (這關的初始配置)
 grid[0][5].mirror = Mirror(45)
 grid[0][4].mirror = Mirror(45) 
-grid[0][3].mirror = Mirror(45)
 
 player = Player(1, 1)
 
 laser_source = (OFFSET_X + GRID_SIZE//2, OFFSET_Y + GRID_SIZE//2)
 laser_direction = (1.0, 0.3)
-goal_tile = grid[1][9] # 終點格
+goal_tile = grid[COLS-2][ROWS-2]
+goal_passed = False
 
 # ----------------- 助手函式 -----------------
 def draw_laser_emitter():
@@ -289,17 +279,10 @@ def draw_tiles_contents():
                     p1, p2 = t.mirror.endpoints(t.center)
                     pg.draw.line(screen, BLACK, p1, p2, 6)
                     pg.draw.line(screen, YELLOW, p1, p2, 2)
-    pg.draw.rect(screen, RED, obstacle_rect, 3)
-
     pg.draw.rect(screen, GREEN, goal_tile.rect, 4)
     if goal_img:
-        screen.blit(goal_img, goal_tile.rect.topleft)
-    # === 繪製這關特有的障礙物 ===
-    pg.draw.rect(screen, GRAY, obstacle_rect)
-
-    if obstacle_img:
-        screen.blit(obstacle_img, obstacle_rect.topleft)
-
+        img_to_draw = goal_img_pass if goal_passed and goal_img_pass else goal_img
+        screen.blit(img_to_draw, goal_tile.rect.topleft)
 
 def draw_player():
     x, y = player.pos 
@@ -328,7 +311,7 @@ def draw_player():
         
         m_draw_x = x - m_w // 2
         
-        # [修改] 使用 65% 高度作為手持位置
+        # 視覺繪製也是使用相同的邏輯：頂部 + 65% 高度
         hand_offset_y = int(h * 0.65) 
         m_draw_y = draw_y + hand_offset_y - m_h // 2
 
@@ -374,11 +357,6 @@ def fire_laser_and_get_path():
         if goal_tile.rect.collidepoint(int(x), int(y)):
             reached_goal = True
             break
-        
-        # [新增] 障礙物碰撞
-        if obstacle_rect.collidepoint(x, y):
-            return path, False
-
         if x < 0 or x > WIDTH or y < 0 or y > HEIGHT: break
         
         c = int((x - OFFSET_X) // GRID_SIZE)
@@ -432,10 +410,8 @@ while running:
                 for c in range(COLS):
                     for r in range(ROWS):
                         grid[c][r].mirror = None
-                # 重設初始鏡子
                 grid[0][5].mirror = Mirror(45)
                 grid[0][4].mirror = Mirror(45) 
-                grid[0][3].mirror = Mirror(45)
                 player.holding = None
                 player.adjust_mode = False
                 laser_path_cache = []
@@ -444,11 +420,14 @@ while running:
                 player.anim_index = 0
                 player.is_moving = False
                 player.facing_right = True
+                goal_passed = False
 
             if event.key == pg.K_f: # Fire
                 last_mirrors = [(c,r,grid[c][r].mirror.angle) for c in range(COLS) for r in range(ROWS) if grid[c][r].mirror]
                 laser_path_cache, laser_reached_goal = fire_laser_and_get_path()
                 last_laser_path = laser_path_cache[:]
+                if laser_reached_goal:
+                    goal_passed = True
 
             if event.key == pg.K_e: # Interact
                 # [修改] 使用 hand_pos 進行判定
@@ -514,11 +493,6 @@ while running:
             player.x = max(min_x, min(max_x, player.x))
             player.y = max(min_y, min(max_y, player.y))
             player.update_logic_position()
-
-    if player.x<20:
-        state="labb_b"
-        running = False
-        break
 
     if player.is_moving:
         player.anim_timer += dt
