@@ -4,6 +4,9 @@ import setup
 # 引入所有場景
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
 
+# 【新增】引入讀檔模組
+from gamedata import load_game_from_file
+
 def bg_size_correction(w:int,h:int) -> tuple[int,int]:
     rw=w/16
     rh=h/9
@@ -46,41 +49,63 @@ def main_initiate():
     main.state_pos["forest_h"]=[2180,672]
 
     setup.music_setup(main)
+    
     global start_menu_var
-    start_menu_var=start_menu.setup(main)
+    start_menu_var = start_menu.setup(main)
     
     global scene
-    # 【重要修正】必須在這裡將所有場景都 setup 初始化
-    # 否則讀檔跳到其他沒初始化的場景時，程式會因為變數缺失而閃退
     scene["pause_menu_var"] = pause_menu.setup(main)
-    scene["home_var"]       = home.setup(main)
-    scene["forest_a_var"]   = forest_a.setup(main)
-    scene["forest_b_var"]   = forest_b.setup(main)
-    scene["forest_c_var"]   = forest_c.setup(main)
-    scene["forest_d_var"]   = forest_d.setup(main)
-    scene["forest_f_var"]   = forest_f.setup(main)
-    scene["forest_g_var"]   = forest_g.setup(main)
-    scene["forest_h_var"]   = forest_h.setup(main)
 
-    # 設定初始遊戲狀態
-    # for debug------v----
-    initial_state = "forest_g" 
-    main.game_state = initial_state
-    # for debug------^----
+    # -------------------------------------------------------------
+    # 【初始化所有場景】
+    # 為了確保讀檔時不管跳到哪張地圖都有初始化，建議這裡全部執行一次
+    # (順便解決 main.char_u 可能還沒產生的問題)
+    # -------------------------------------------------------------
+    scene["home_var"] = home.setup(main)
+    scene["forest_a_var"] = forest_a.setup(main)
+    scene["forest_b_var"] = forest_b.setup(main)
+    scene["forest_c_var"] = forest_c.setup(main)
+    scene["forest_d_var"] = forest_d.setup(main)
+    scene["forest_f_var"] = forest_f.setup(main)
+    scene["forest_g_var"] = forest_g.setup(main)
+    scene["forest_h_var"] = forest_h.setup(main)
 
-    main.char_u.map_x,main.char_u.map_y=main.state_pos[initial_state]
+    # -------------------------------------------------------------
+    # 【整合存檔系統】
+    # -------------------------------------------------------------
+    # 1. 讀取存檔
+    game_data, inventory, loaded_pos, loaded_scene = load_game_from_file()
 
-    main.last_game_state = initial_state
-    main.last_pause_state = initial_state
+    # 2. 將資料綁定到 main 物件，讓全域(暫停選單、商店)都能共用
+    main.game_data = game_data
+    main.inventory = inventory
+
+    # 3. 判斷要進入哪個場景
+    if loaded_scene and loaded_pos:
+        # A. 如果有存檔，使用存檔的場景和座標
+        main.game_state = loaded_scene
+        initial_pos = loaded_pos
+        print(f"[System] 讀檔成功：進入 {loaded_scene}")
+    else:
+        # B. 如果沒有存檔 (新遊戲)，使用預設值
+        # 這裡設定新遊戲的起始點，例如 "home" 或你測試用的 "forest_g"
+        main.game_state = "home" 
+        initial_pos = main.state_pos[main.game_state]
+        print("[System] 新遊戲開始")
+
+    # 4. 應用座標 (此時 main.char_u 已經在上面的 setup 中建立了)
+    main.char_u.map_x, main.char_u.map_y = initial_pos
+
+    # -------------------------------------------------------------
+
+    main.last_game_state = main.game_state
+    main.last_pause_state = main.game_state
     
     main.captured_screen = None
-    
-    # 【新增】用來標記是否需要刷新暫停背景
     main.refreshing_pause_bg = False 
 
 def bgm_manager():
     if main.game_state == "pause_menu":
-        # 暫停時音樂變小聲
         pg.mixer.music.set_volume(0.2)
         return
     
@@ -104,6 +129,8 @@ if __name__ == "__main__":
     main = xo.VAR()
     font = xo.VAR()
     start_menu_var = xo.VAR()
+    
+    # 這裡先定義空的場景變數容器
     scene={
         "home_var":xo.VAR(),
         "forest_a_var":xo.VAR(),
@@ -126,22 +153,17 @@ if __name__ == "__main__":
             if event.type == pg.QUIT:
                 main.running=False
 
-            # 【暫停觸發邏輯】
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if main.game_state == "pause_menu":
-                    # 如果已經在暫停，交給下方的 handle_input 處理
                     pass
                 elif main.game_state != "start_menu": 
-                    # --- 進入暫停 ---
+                    # 紀錄進入暫停前的狀態，方便存檔時知道是哪張地圖
                     main.last_pause_state = main.game_state
-                    main.game_state = "pause_menu"
-                    # 截圖當前畫面做背景
-                    main.captured_screen = main.screen.copy()
                     
-                    # 使用 continue 跳過迴圈，防止事件穿透到 handle_input
+                    main.game_state = "pause_menu"
+                    main.captured_screen = main.screen.copy()
                     continue 
 
-            # 只有不在暫停時才處理移動
             if main.game_state != "pause_menu":
                 if event.type == pg.KEYDOWN:
                     if event.key in [pg.K_w, pg.K_a, pg.K_s, pg.K_d]:
@@ -157,8 +179,8 @@ if __name__ == "__main__":
                     elif event.key in main.InteractKeyQueue:
                         main.InteractKeyQueue.remove(event.key)
             
-            # 【暫停選單輸入處理】
             if main.game_state == "pause_menu":
+                # 把 main 傳進去，這樣 pause_menu 就能存取 main.game_data 和 main.inventory
                 pause_menu.handle_input(main, scene["pause_menu_var"], event)
 
         bgm_manager()
@@ -166,14 +188,12 @@ if __name__ == "__main__":
         main.play_animation = False
         if main.last_game_state != main.game_state and \
                 main.last_game_state != "pause_menu" and \
-                main.game_state != "pause_menu": # 進出暫停不算切換場景動畫
+                main.game_state != "pause_menu": 
             main.play_animation = True
         
-        # 更新 main.last_game_state (除了暫停之外的記錄)
         if main.game_state != "pause_menu":
              main.last_game_state = main.game_state
 
-        # 【場景更新與繪製】
         match main.game_state:
             case "start_menu":
                 start_menu.update(main,start_menu_var)
@@ -193,33 +213,21 @@ if __name__ == "__main__":
                 scene=forest_g.update(main,scene,font,scene["forest_g_var"])
             case "forest_h":
                 scene=forest_h.update(main,scene,font,scene["forest_h_var"])
-            
             case "pause_menu":
+                # 暫停選單更新時，也可以存取 main.game_data
                 pause_menu.update(main, scene["pause_menu_var"])
                 
             case _:
-                # 容錯處理
                 if main.game_state != "pause_menu":
                     print("no game state:", main.game_state)
                     main.running=False
-
-        # ==========================================
-        # 【背景刷新邏輯】
-        # 當 pause_menu 讀檔後把 main.refreshing_pause_bg 設為 True 時執行
-        # ==========================================
+        
         if main.refreshing_pause_bg:
-            # 1. 剛剛上面的 match 已經把新場景畫好了，現在截圖
+            # 刷新暫停背景的功能
             main.captured_screen = main.screen.copy()
-            
-            # 2. 馬上把狀態切回 pause_menu (保持暫停狀態)
             main.game_state = "pause_menu"
-            
-            # 3. 為了避免畫面閃爍，立刻蓋上暫停選單
             pause_menu.update(main, scene["pause_menu_var"])
-            
-            # 4. 關閉旗標
             main.refreshing_pause_bg = False
-        # ==========================================
 
         pg.display.update()
     pg.quit()

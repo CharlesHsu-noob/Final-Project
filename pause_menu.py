@@ -136,15 +136,21 @@ def setup(main):
     
     # 物品
     v.inventory_list = []
-    ITEM_TEMPLATES = [
+    # 儲存模板以便後續填充
+    v.ITEM_TEMPLATES = [
         {"name":"能量飲料", "desc":"能量+3", "type":"consumable", "effect":"ENG +3", "icon_file":"enrgdrnk.png"},
         {"name":"堅果棒", "desc":"血量回復20%", "type":"consumable", "effect":"HP +20%", "icon_file":"nutbar.png"},
         {"name":"空白符文", "desc":"點擊開啟刻印選單", "type":"rune", "effect":"Rune", "icon_file":"rune_empty.png"}
     ]
-    for init in [{"name":"能量飲料","count":5}, {"name":"堅果棒","count":3}, {"name":"空白符文","count":2}]:
-        tmpl = next((t for t in ITEM_TEMPLATES if t["name"] == init["name"]), None)
+    v.item_map = {}
+    for t in v.ITEM_TEMPLATES: v.item_map[t["name"]] = t["icon_file"]
+
+    # 【修正 1】將預設物品數量改為 0
+    for init in [{"name":"能量飲料","count":0}, {"name":"堅果棒","count":0}, {"name":"空白符文","count":0}]:
+        tmpl = next((t for t in v.ITEM_TEMPLATES if t["name"] == init["name"]), None)
         if tmpl:
-            item = tmpl.copy(); item.update({"count":init["count"], "icon":v.load_icon(tmpl["icon_file"])})
+            item = tmpl.copy()
+            item.update({"count":init["count"], "icon":v.load_icon(tmpl["icon_file"])})
             v.inventory_list.append(item)
 
     # UI 元件
@@ -175,6 +181,9 @@ def setup(main):
     v.pop_st = v.POP_NONE; v.rune_cur = 0; v.tar_cur = 0; v.sel_rune = None
     v.msg = ""; v.msg_timer = 0; v.save_msg = ""; v.save_timer = 0; v.act_slot = 0
     
+    # 【修正 2】加入 first_init 變數，防止 update 中取不到而閃退
+    v.first_init = True
+
     refresh_slots(v)
     return v
 
@@ -204,29 +213,44 @@ def load_slot(main, v, idx):
     path = os.path.join(v.SAVE_DIR, f"save_{idx}.json")
     if not os.path.exists(path): return "無存檔"
     try:
-        with open(path, "r", encoding="utf-8") as f: data = json.load(f)
-        inv, pos, scene = v.game_data.load_from_dict(data)
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
         
-        # 關鍵：場景刷新
-        if scene:
-            main.last_pause_state = scene
-            main.last_game_state = scene
-            main.game_state = scene
+        # 載入資料到暫停選單的 game_data
+        inv, pos, scene_name = v.game_data.load_from_dict(data)
+        
+        # --- 同步回主程式物件 ---
+        if hasattr(main, "game_data"):
+            main.game_data.money = v.game_data.money
+            main.game_data.party_data = v.game_data.party_data
+            main.game_data.chapter = v.game_data.chapter
+
+        # 轉換場景名稱 (轉小寫以對應 main.py 的 case)
+        if scene_name:
+            s_target = scene_name.lower()
+            main.last_pause_state = s_target
+            main.last_game_state = s_target
+            main.game_state = s_target
             main.refreshing_pause_bg = True
         
+        # 同步角色座標與碰撞箱
         if pos and hasattr(main, "char_u"):
             main.char_u.map_x, main.char_u.map_y = pos[0], pos[1]
             if hasattr(main.char_u, "rect"):
                 main.char_u.rect.x, main.char_u.rect.y = int(pos[0]), int(pos[1])
 
+        # 更新背包
+        main.inventory = inv
         v.inventory_list = inv
-        for it in v.inventory_list: it["icon"] = v.load_icon(it.get("icon_file", ""))
+        for it in v.inventory_list:
+            fname = v.item_map.get(it["name"])
+            it["icon"] = v.load_icon(fname) if fname else None
         
-        v.slider_m.set_value(v.game_data.volume)
-        v.slider_s.set_value(v.game_data.sfx_volume)
-        pg.mixer.music.set_volume(v.game_data.volume)
+        refresh_slots(v)
         return "讀檔成功"
-    except Exception as e: print(e); return "讀檔失敗"
+    except Exception as e:
+        print(f"讀檔錯誤: {e}")
+        return "讀檔失敗"
 
 def use_item(v, idx):
     if idx >= len(v.inventory_list): return
@@ -256,6 +280,41 @@ def confirm_use(v):
 # ================= 輸入與更新 =================
 
 def update(main, v):
+    # --- 1. 資料同步與強制初始化 ---
+    if hasattr(main, "game_data"):
+        v.game_data = main.game_data
+    
+    if hasattr(main, "inventory"):
+        # 【初始化邏輯】: 若背包為空，將數量設為 0 的物品放入
+        if v.first_init:
+            if not main.inventory: # 如果背包是空的
+                print("初始化：建立預設物品欄（數量為 0）...")
+                new_items = []
+                
+                # 遍歷所有定義好的物品模板 (ITEM_TEMPLATES)
+                for t in v.ITEM_TEMPLATES:
+                    item = t.copy()
+                    item["count"] = 0  # 強制設為 0
+                    item["icon"] = v.load_icon(t["icon_file"])
+                    new_items.append(item)
+                
+                # 將這些數量為 0 的物品放入主程式背包
+                main.inventory.extend(new_items)
+            
+            v.first_init = False # 確保只執行一次
+
+        # --- 2. 正常同步 ---
+        # 讓 v.inventory_list 指向 main.inventory
+        v.inventory_list = main.inventory
+        
+        # --- 3. 圖片修復 ---
+        # 確保同步過來的物品有圖片 (防止讀檔後圖片遺失)
+        for item in v.inventory_list:
+            if "icon" not in item or item["icon"] is None:
+                fname = v.item_map.get(item["name"])
+                item["icon"] = v.load_icon(fname) if fname else None
+
+    # --- 畫面繪製 (保持不變) ---
     if hasattr(main, "captured_screen"): main.screen.blit(main.captured_screen, (0,0))
     main.screen.blit(v.overlay, (0, 0))
     main.screen.blit(v.bg, v.bg_rect)
@@ -267,7 +326,7 @@ def update(main, v):
         v.alpha -= 30
         if v.alpha <= 0:
             v.alpha, v.fade_out, v.fade_in = 0, False, True
-            v.page = 3 - v.page # Switch 1<->2
+            v.page = 3 - v.page 
             if v.page==2: v.p2_sect, v.p2_c_idx = 0, 0
             else: v.cursor = [1, 0]
     elif v.fade_in:
@@ -281,15 +340,15 @@ def update(main, v):
     main.screen.blit(layer, (0, 0))
     if v.save_timer > 0: v.save_timer -= 1
     if v.pop_st == v.POP_MSG and v.msg_timer > 0: v.msg_timer -= 1
-
+    
 def handle_input(main, v, evt):
     if not v.ui_on or evt.type != pg.KEYDOWN: return
     
-    # [修正] ESC 返回鍵的防呆機制
+    # [防呆機制]
     if evt.key == pg.K_ESCAPE and v.pop_st == v.POP_NONE:
-        # 嘗試讀取 last_pause_state，若無則讀取 last_game_state，再無則預設 "explore"
+        # 嘗試讀取 last_pause_state，若無則讀取 last_game_state，再無則預設 "home"
         target = getattr(main, "last_pause_state", None)
-        if not target: target = getattr(main, "last_game_state", "explore")
+        if not target: target = getattr(main, "last_game_state", "home")
         
         main.game_state = target
         return
@@ -317,7 +376,7 @@ def inp_p1(main, v, e):
         if c==0:
             if r==0: # [修正] 繼續遊戲按鈕的防呆機制
                 target = getattr(main, "last_pause_state", None)
-                if not target: target = getattr(main, "last_game_state", "explore")
+                if not target: target = getattr(main, "last_game_state", "home")
                 main.game_state = target
             elif r==3: main.running = False
         else:
@@ -386,9 +445,8 @@ def draw_p1(main, v, s):
         sl.draw(s, C)
         if sel and v.cursor[1]==i+1: pg.draw.rect(s, C['BG_SLOT'], sl.rect.inflate(10,20), 2, 5)
         
-        # [修正處] 這裡原本是 v = sl.get_value()，改為 val，避免蓋掉參數 v
+        # [修正處] 這裡原本是 v = sl.get_value()，改為 val
         val = sl.get_value() 
-        # 下面使用 v.font_small (物件) 和 val (數值)
         s.blit(v.font_small.render(f"{t}: {int(val*100)}%", True, C['DARK']), (sx(180), sy(260+i*70)))
 
     # Right Slots

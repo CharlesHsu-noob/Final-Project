@@ -1,7 +1,7 @@
 {
     "chapter": 1,
     "money": 100,
-    "playtime": 15.86070203781128,
+    "playtime": 11.059511423110962,
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party_data": [
@@ -42,7 +42,7 @@
         }
     ],
     "upgrade_log": [],
-    "timestamp": "01/01 18:56",
+    "timestamp": "01/02 00:52",
     "inventory": [
         {
             "name": "\u80fd\u91cf\u98f2\u6599",
@@ -50,7 +50,7 @@
             "type": "consumable",
             "effect": "ENG +3",
             "icon_file": "enrgdrnk.png",
-            "count": 5
+            "count": 0
         },
         {
             "name": "\u5805\u679c\u68d2",
@@ -58,7 +58,7 @@
             "type": "consumable",
             "effect": "HP +20%",
             "icon_file": "nutbar.png",
-            "count": 3
+            "count": 0
         },
         {
             "name": "\u7a7a\u767d\u7b26\u6587",
@@ -66,12 +66,12 @@
             "type": "rune",
             "effect": "Rune",
             "icon_file": "rune_empty.png",
-            "count": 2
+            "count": 0
         }
     ],
     "player_pos": [
-        932,
-        672
+        1995,
+        720
     ],
-    "scene_name": "forest_h"
+    "scene_name": "home"
 }
