@@ -8,20 +8,15 @@ from QTE_DBDmode import play_dbd_qte
 # ==========================================
 # ★★★ 【全域輔助函式與設定】 ★★★
 # ==========================================
-# 這些放在函式外面，讓 Enemy 類別也能讀取到
-
 current_path = os.path.dirname(__file__)
 
-# ★★★ 修改：路徑指向 image/battle/ ★★★
 def load_img(filename, alpha=True):
-    # 移除原本程式碼中可能殘留的 "photo/" 路徑前綴，確保指向正確資料夾
     clean_name = filename.replace("photo/", "") 
     path = os.path.join(current_path, "image", "battle", clean_name)
     if os.path.exists(path):
         return pygame.image.load(path).convert_alpha() if alpha else pygame.image.load(path).convert()
     return None
 
-# ★★★ 修改：路徑指向 voice/bgm/ ★★★
 def load_sfx(filename):
     path = os.path.join(current_path, "voice", "bgm", filename)
     if os.path.exists(path):
@@ -41,11 +36,9 @@ class Enemy:
         
         self.attack_fx_key = config.get("fx", "bite")
 
-        # ★★★ 載入音效 ★★★
         self.snd_attack = load_sfx(f"{name.lower()}_a.ogg")
         self.snd_damage = load_sfx(f"{name.lower()}_d.ogg")
 
-        # 這裡會呼叫上面的 load_img，自動去 image/battle 找
         raw = load_img(img_name)
         
         if raw:
@@ -60,7 +53,7 @@ class Enemy:
         self.rect.centerx = int(screen_width * config["pos_x"])
         self.rect.bottom = int(screen_height * config["pos_y"])
         self.is_dead = False
-        self.screen_height = screen_height # 存起來畫血條用
+        self.screen_height = screen_height 
         self.hp_bar_offset_y = -20
         self.enemy_hp_font = pygame.font.SysFont(None, int(screen_height * 0.025))
 
@@ -123,7 +116,7 @@ def run_battle(screen):
     ]
     BASE_ENEMY_DMG = 8
 
-    # --- BGM 載入 (修正路徑) ---
+    # --- BGM 載入 ---
     bgm_path = os.path.join(current_path, "voice", "bgm", "battle.ogg")
     try:
         if os.path.exists(bgm_path):
@@ -169,7 +162,6 @@ def run_battle(screen):
     # --- 遊戲變數 ---
     enemies = []
     
-    # 內部函式：初始化敵人
     def init_enemies():
         nonlocal enemies
         enemies = []
@@ -189,10 +181,9 @@ def run_battle(screen):
                 "pos_x": x_positions[i],
                 "fx": data.get("fx", "bite")
             }
-            # 傳入 HEIGHT/WIDTH 供 Enemy 類別計算位置
             enemies.append(Enemy(data["name"], data["img"], config, HEIGHT, WIDTH))
 
-    init_enemies() # 初始執行
+    init_enemies() 
 
     # UI 變數
     P_HP_X, P_HP_Y, P_HP_W, P_HP_H = 0.725, 0.615, 0.2, 0.025
@@ -263,7 +254,6 @@ def run_battle(screen):
     target_skill = None        
     current_target_idx = 0    
 
-    # 內部函式：觸發特效
     def trigger_bite(fx_key="bite"): 
         nonlocal bite_anim, current_attack_img
         bite_anim["active"] = True
@@ -283,24 +273,6 @@ def run_battle(screen):
 
     def check_victory():
         return all(e.is_dead for e in enemies)
-
-    def reset_game():
-        # 使用 nonlocal 存取函式內的變數
-        nonlocal PLAYER_HP, player_energy, shield_turns, game_over, victory, selected_option
-        nonlocal bite_anim, energy_recover_queue, confetti_particles, impact_state
-        nonlocal player_buffer_hp, player_buffer_timer, selecting_target, target_skill
-        nonlocal enemy_turn_active, enemy_attack_queue, enemy_action_timer
-        
-        PLAYER_HP = PLAYER_MAX_HP; player_energy = MAX_ENERGY
-        player_buffer_hp = PLAYER_HP; player_buffer_timer = 0
-        shield_turns = 0; game_over = False; victory = False
-        selected_option = None
-        enemy_turn_active = False; enemy_attack_queue = []
-        
-        bite_anim = {"active": False, "timer": 0}; energy_recover_queue = []
-        confetti_particles = []; impact_state["active"] = False
-        selecting_target = False; target_skill = None
-        init_enemies() 
 
     # 內部函式：繪製場景
     def draw_scene(dt, is_background=False):
@@ -486,7 +458,9 @@ def run_battle(screen):
             else:
                 txt = result_font.render("GAME OVER", True, (255, 50, 50))
             screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - txt.get_height()))
-            res = font.render("Press 'R' to Restart", True, (255, 255, 255))
+            
+            # ★★★ 修改：文字改成 Press 'SPACE' to Return ★★★
+            res = font.render("Press 'SPACE' to Return", True, (255, 255, 255))
             screen.blit(res, (WIDTH // 2 - res.get_width() // 2, HEIGHT // 2 + HEIGHT * 0.1))
 
     # --- 遊戲主迴圈 ---
@@ -497,10 +471,15 @@ def run_battle(screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             
+            # ★★★ 修改：遊戲結束狀態下的按鍵判定 ★★★
             if game_over or victory:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE: running = False
-                    if event.key == pygame.K_r: reset_game() 
+                    
+                    # 按下 SPACE 離開迴圈，這會結束 run_battle 函式
+                    # 主程式 main.py 接到控制權後會繼續執行剩下的程式碼（回到地圖）
+                    if event.key == pygame.K_SPACE: 
+                        running = False 
                 continue 
             
             if enemy_turn_active: continue
@@ -600,9 +579,8 @@ if __name__ == "__main__":
     pygame.init()
     pygame.mixer.init()
     
-    # 在這裡建立視窗 (可以選擇是否全螢幕)
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    # screen = pygame.display.set_mode((1280, 720)) # 如果想用視窗模式測試，請改用這行
+    # screen = pygame.display.set_mode((1280, 720)) 
     
     pygame.display.set_caption("Fight Prototype")
     
