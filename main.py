@@ -7,6 +7,9 @@ import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, fores
 # 【新增】引入讀檔模組
 from gamedata import load_game_from_file
 
+# ★★★ 1. 匯入你的 fight.py ★★★
+import fight 
+
 def bg_size_correction(w: int, h: int) -> tuple[int, int]:
     rw = w / 16
     rh = h / 9
@@ -20,10 +23,10 @@ def main_initiate():
     pg.mixer.init()
     main.fps = 60
     main.clock = pg.time.Clock()
-    screeninfo=pg.display.Info()
-    main.w,main.h=screeninfo.current_w,screeninfo.current_h
-    main.menu_w,main.menu_h=bg_size_correction(main.w,main.h)
-    main.screen = pg.display.set_mode((main.w,main.h)) 
+    screeninfo = pg.display.Info()
+    main.w, main.h = screeninfo.current_w, screeninfo.current_h
+    main.menu_w, main.menu_h = bg_size_correction(main.w, main.h)
+    main.screen = pg.display.set_mode((main.w, main.h)) 
     pg.display.set_caption("XDD's adventure")
     main.rainbow_text_color = xo.ColorCycler(speed=0.08)
     global font
@@ -37,6 +40,10 @@ def main_initiate():
     
     # ★★★ 2. 新增一個變數來記錄戰鬥是否完成 ★★★
     main.forest_battle_done = False 
+    
+    # ★★★ 新增：用來記錄戰鬥前的位置變數 ★★★
+    main.pre_fight_map = None
+    main.pre_fight_pos = (0, 0)
 
     main.MoveKeyQueue = []
     main.InteractKeyQueue = []
@@ -55,14 +62,11 @@ def main_initiate():
     
     global start_menu_var
     start_menu_var = start_menu.setup(main)
-    
     global scene
     scene["pause_menu_var"] = pause_menu.setup(main)
 
     # -------------------------------------------------------------
     # 【初始化所有場景】
-    # 為了確保讀檔時不管跳到哪張地圖都有初始化，建議這裡全部執行一次
-    # (順便解決 main.char_u 可能還沒產生的問題)
     # -------------------------------------------------------------
     scene["home_var"] = home.setup(main)
     scene["forest_a_var"] = forest_a.setup(main)
@@ -76,34 +80,22 @@ def main_initiate():
     # -------------------------------------------------------------
     # 【整合存檔系統】
     # -------------------------------------------------------------
-    # 1. 讀取存檔
     game_data, inventory, loaded_pos, loaded_scene = load_game_from_file()
-
-    # 2. 將資料綁定到 main 物件，讓全域(暫停選單、商店)都能共用
     main.game_data = game_data
     main.inventory = inventory
 
-    # 3. 判斷要進入哪個場景
+    initial_pos = None
     if loaded_scene and loaded_pos:
-        # A. 如果有存檔，使用存檔的場景和座標
         main.game_state = loaded_scene
         initial_pos = loaded_pos
         print(f"[System] 讀檔成功：進入 {loaded_scene}")
     else:
-        # B. 如果沒有存檔 (新遊戲)，使用預設值
-        # 這裡設定新遊戲的起始點，例如 "home" 或你測試用的 "forest_g"
         main.game_state = "home" 
         initial_pos = main.state_pos[main.game_state]
         print("[System] 新遊戲開始")
-    scene["home_var"] = home.setup(main)
-    main.char_u.map_x, main.char_u.map_y = main.state_pos[initial_state]
 
-    main.last_game_state = initial_state
-    main.last_pause_state = initial_state
-
-def bgm_manager():
-    # 4. 應用座標 (此時 main.char_u 已經在上面的 setup 中建立了)
-    main.char_u.map_x, main.char_u.map_y = initial_pos
+    if initial_pos:
+        main.char_u.map_x, main.char_u.map_y = initial_pos
 
     # -------------------------------------------------------------
 
@@ -121,7 +113,6 @@ def bgm_manager():
          main.game_state.find("forest") != -1:
         return
     
-    # 如果進入戰鬥狀態，這裡通常不處理，交給 fight.py 自己播音樂
     if main.game_state == "fight":
         return
 
@@ -142,36 +133,34 @@ if __name__ == "__main__":
     font = xo.VAR()
     start_menu_var = xo.VAR()
     
-    # 這裡先定義空的場景變數容器
-    scene={
-        "home_var":xo.VAR(),
-        "forest_a_var":xo.VAR(),
-        "forest_b_var":xo.VAR(),
-        "forest_c_var":xo.VAR(),
-        "forest_d_var":xo.VAR(),
-        "forest_f_var":xo.VAR(),
-        "forest_g_var":xo.VAR(),
-        "forest_h_var":xo.VAR(),
-        "pause_menu_var":xo.VAR()
+    scene = {
+        "home_var": xo.VAR(),
+        "forest_a_var": xo.VAR(),
+        "forest_b_var": xo.VAR(),
+        "forest_c_var": xo.VAR(),
+        "forest_d_var": xo.VAR(),
+        "forest_f_var": xo.VAR(),
+        "forest_g_var": xo.VAR(),
+        "forest_h_var": xo.VAR(),
+        "pause_menu_var": xo.VAR()
     }
-    #forest_a_var=xo.VAR()
+    
     main_initiate()
     print("zoom ratio=", main.zoom_ratio)
     
     while main.running:
         main.clock.tick(main.fps)
 
+        # ------------------ 1. 事件處理 ------------------
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                main.running=False
+                main.running = False
 
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if main.game_state == "pause_menu":
                     pass
                 elif main.game_state != "start_menu": 
-                    # 紀錄進入暫停前的狀態，方便存檔時知道是哪張地圖
                     main.last_pause_state = main.game_state
-                    
                     main.game_state = "pause_menu"
                     main.captured_screen = main.screen.copy()
                     continue 
@@ -184,6 +173,13 @@ if __name__ == "__main__":
                     elif event.key in [pg.K_f]:
                         if event.key not in main.InteractKeyQueue:
                             main.InteractKeyQueue.append(event.key)
+                    
+                    # 測試鍵：按 K 強制進戰鬥
+                    if event.key == pg.K_k:
+                        # ★ 紀錄當前狀態
+                        main.pre_fight_map = main.game_state
+                        main.pre_fight_pos = (main.char_u.map_x, main.char_u.map_y)
+                        main.game_state = "fight"
 
                 if event.type == pg.KEYUP:
                     if event.key in main.MoveKeyQueue:
@@ -192,7 +188,6 @@ if __name__ == "__main__":
                         main.InteractKeyQueue.remove(event.key)
             
             if main.game_state == "pause_menu":
-                # 把 main 傳進去，這樣 pause_menu 就能存取 main.game_data 和 main.inventory
                 pause_menu.handle_input(main, scene["pause_menu_var"], event)
 
         bgm_manager()
@@ -206,6 +201,7 @@ if __name__ == "__main__":
         if main.game_state != "pause_menu":
              main.last_game_state = main.game_state
 
+        # ------------------ 2. 場景更新 (Match Case) ------------------
         match main.game_state:
             case "start_menu":
                 start_menu.update(main, start_menu_var)
@@ -226,51 +222,60 @@ if __name__ == "__main__":
             case "forest_h":
                 scene = forest_h.update(main, scene, font, scene["forest_h_var"])
             
-            # ★★★ 3. 處理戰鬥狀態 ★★★
             case "fight":
-                pg.mixer.music.stop() # 停掉地圖音樂
-                
-                # 執行 fight.py 裡面的主函式
-                # 程式會暫停在這裡直到戰鬥結束
+                pg.mixer.music.stop() 
                 fight.run_battle(main.screen)
                 
-                # 戰鬥結束後執行以下程式：
-                main.game_state = "forest_g" # 切回原本的地圖
-                main.forest_battle_done = True # ★ 設定為已完成，防止再次觸發 ★
-                
-                # 稍微把角色往後推一點點，避免視覺上還黏在觸發點
-                main.char_u.map_x -= 50 
-                
-                # 強制清除按鍵隊列，避免戰鬥中按的鍵在回到地圖時導致角色亂跑
+                # ★★★ 戰鬥結束後的處理：回到戰鬥前的地圖與位置 ★★★
+                if main.pre_fight_map:
+                    main.game_state = main.pre_fight_map
+                    # 恢復座標
+                    main.char_u.map_x = main.pre_fight_pos[0]
+                    main.char_u.map_y = main.pre_fight_pos[1]
+                    
+                    # 稍微後退一點點，避免視覺上還黏在觸發點
+                    main.char_u.map_x -= 50
+                else:
+                    # 如果沒有紀錄（防呆），預設回 forest_g
+                    main.game_state = "forest_g"
+
+                main.forest_battle_done = True 
                 main.MoveKeyQueue.clear()
 
-                scene=forest_h.update(main,scene,font,scene["forest_h_var"])
             case "pause_menu":
-                # 暫停選單更新時，也可以存取 main.game_data
                 pause_menu.update(main, scene["pause_menu_var"])
                 
             case _:
                 if main.game_state != "pause_menu":
                     print("no game state:", main.game_state)
-                    main.running=False
+                    main.running = False
         
+        # ------------------ 3. 戰鬥觸發判定 ------------------
+        
+        target_x = 2453
+        target_y_top = 600
+        target_y_bottom = 1200
+        tolerance_x = 20
+
+        # 請注意：這段邏輯是針對 forest_a，若你換地圖要改這裡
+        if main.game_state == "forest_a":
+            in_x = abs(main.char_u.map_x - target_x) <= tolerance_x
+            in_y = target_y_top <= main.char_u.map_y <= target_y_bottom
+
+            if in_x and in_y and (not main.forest_battle_done):
+                # ★ 觸發時紀錄當前位置
+                main.pre_fight_map = main.game_state
+                main.pre_fight_pos = (main.char_u.map_x, main.char_u.map_y)
+                
+                main.game_state = "fight"
+
+        # ------------------ 4. 畫面更新 ------------------
         if main.refreshing_pause_bg:
-            # 刷新暫停背景的功能
             main.captured_screen = main.screen.copy()
             main.game_state = "pause_menu"
             pause_menu.update(main, scene["pause_menu_var"])
             main.refreshing_pause_bg = False
 
-                print("no game state")
-                main.running = False
-        
-        # ★★★ 4. 修改範圍判定條件 ★★★
-        # 加上 "and not main.forest_battle_done"
-        if (478 <= main.char_u.map_y <= 814) and \
-           (abs(main.char_u.map_x - 1093) <= 20) and \
-           (not main.forest_battle_done):
-            
-            main.game_state = "fight"
-
         pg.display.update()
+    
     pg.quit()

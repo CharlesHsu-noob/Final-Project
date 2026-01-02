@@ -1,9 +1,9 @@
 {
     "chapter": 1,
     "money": 100,
-    "playtime": 75.53637456893921,
+    "playtime": 64.08865976333618,
     "volume": 0.5,
-    "sfx_volume": 0.5,
+    "sfx_volume": 0.45,
     "party_data": [
         {
             "name": "U",
@@ -42,7 +42,7 @@
         }
     ],
     "upgrade_log": [],
-    "timestamp": "01/03 02:50",
+    "timestamp": "01/03 02:19",
     "inventory": [
         {
             "name": "\u80fd\u91cf\u98f2\u6599",
@@ -70,8 +70,8 @@
         }
     ],
     "player_pos": [
-        1921,
-        902
+        1432,
+        1006
     ],
-    "scene_name": "forest_a"
+    "scene_name": "forest_b"
 }
