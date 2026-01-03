@@ -513,7 +513,9 @@ def door_update(game,scene:dict,char,door_list,camera_x,camera_y) -> tuple[bool,
             abs(door.rect.centery-char.rect.centery)<char.half_h:
             '''
         if pg.sprite.collide_mask(char,door):
-
+            if door.target in ["forest_e"]:
+                game.game_state=door.target
+                return True,scene
             print(f"Door detected at: ({char.map_x}, {char.map_y}), target: {door.target}")
             frozen=game.screen.copy()
             if char.move_state=="up":
@@ -524,7 +526,11 @@ def door_update(game,scene:dict,char,door_list,camera_x,camera_y) -> tuple[bool,
                 char.map_x+=40
             elif char.move_state=="right":
                 char.map_x-=40
-            game.state_pos[game.game_state]=char.map_x,char.map_y
+            game.state_pos[game.game_state] = char.map_x, char.map_y
+            print(game.game_state,":",game.state_pos[game.game_state])
+            if door.target in ["labg_b"]:
+                game.game_state = door.target
+                return True, scene
             char.map_x,char.map_y=game.state_pos[door.target]
             scene_fade_out(game,frozen)
             scene=mem_manager(game,scene,game.game_state,door.target)
@@ -539,12 +545,14 @@ def mem_manager(game:VAR,scene:dict,source:str,target:str) -> dict :
     source_class_name = source + "_var"
     scene[source_class_name].suicide()
     scene[source_class_name] = None
+    print("unload",source_class_name,"success.")
     #create a new scene var
     tar_var_name= target + "_var"
     scene[tar_var_name]=VAR()
     tar_module=importlib.import_module(target)
     tar_setup=getattr(tar_module, "setup")
     scene[tar_var_name]=tar_setup(game)
+    print("load",tar_var_name,"success.")
 
     return scene
 

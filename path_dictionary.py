@@ -46,3 +46,12 @@ forest_path={
     "boat":[os.path.join("image","map","forest","forest_boat.png")],
     "rock":[os.path.join("image","map","forest","forest_rock.png")]
 }
+
+#labg
+labg_path={
+    "a":os.path.join("image","map","labg","labg_a.png"),
+    "b":os.path.join("image","map","labg","labg_b.png"),
+    "c":os.path.join("image","map","labg","labg_c.png"),
+    "d":os.path.join("image","map","labg","labg_d.png"),
+    "e":os.path.join("image","map","labg","labg_e.png")
+}

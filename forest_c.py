@@ -49,6 +49,12 @@ def setup(game:xo.VAR) ->xo.VAR:
                                          "forest_d",
                                          False)
     forest_c.door_list.append(forest_c.door_forest_d)
+    forest_c.door_forest_e=xo.doorObject(pd.door_path,
+                                         (1504, 10),
+                                         (333, 20),
+                                         "forest_e",
+                                         False)
+    forest_c.door_list.append(forest_c.door_forest_e)
     return forest_c
 
 def update(game:xo.VAR,scene:dict,font,forest_c:xo.VAR) -> dict:

@@ -39,12 +39,12 @@ def setup(game:xo.VAR) ->xo.VAR:
                                          "forest_g",
                                          False)
     forest_h.door_list.append(forest_h.door_forest_g)
-    forest_h.door_labf_a=xo.doorObject(pd.door_path,
+    forest_h.door_labg_a=xo.doorObject(pd.door_path,
                                          (156,700),
                                          (25,320),
-                                         "labf_a",
+                                         "labg_a",
                                          False)
-    forest_h.door_list.append(forest_h.door_labf_a)
+    forest_h.door_list.append(forest_h.door_labg_a)
 
     return forest_h
 

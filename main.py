@@ -3,7 +3,7 @@ import XddObjects as xo
 import setup
 # 引入所有場景
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
-
+import labg_a
 # 【新增】引入讀檔模組
 from gamedata import load_game_from_file
 
@@ -57,6 +57,7 @@ def main_initiate():
     main.state_pos["forest_f"] = [1900, 690]
     main.state_pos["forest_g"] = [3750, 750]
     main.state_pos["forest_h"] = [2180, 672]
+    main.state_pos["labg_a"] = [2480, 508]
 
     setup.music_setup(main)
     
@@ -76,6 +77,7 @@ def main_initiate():
     scene["forest_f_var"] = forest_f.setup(main)
     scene["forest_g_var"] = forest_g.setup(main)
     scene["forest_h_var"] = forest_h.setup(main)
+    scene["labg_a_var"]=labg_a.setup(main)
 
     # -------------------------------------------------------------
     # 【整合存檔系統】
@@ -113,7 +115,7 @@ def bgm_manager():
          main.game_state.find("forest") != -1:
         return
     
-    if main.game_state == "fight":
+    if main.game_state in ["fight","home"]:
         return
 
     target_music = main.music_playlist.get(main.game_state)
@@ -142,7 +144,8 @@ if __name__ == "__main__":
         "forest_f_var": xo.VAR(),
         "forest_g_var": xo.VAR(),
         "forest_h_var": xo.VAR(),
-        "pause_menu_var": xo.VAR()
+        "pause_menu_var": xo.VAR(),
+        "labg_a_var": xo.VAR()
     }
     
     main_initiate()
@@ -215,13 +218,28 @@ if __name__ == "__main__":
                 scene = forest_c.update(main, scene, font, scene["forest_c_var"])
             case "forest_d":
                 scene = forest_d.update(main, scene, font, scene["forest_d_var"])
+            case "forest_e":
+                import climb
+                climb.update(main.w,main.h)
+                main.game_state="forest_f"
+                main.char_u.map_x,main.char_u.map_y=main.state_pos["forest_f"]
+                main.MoveKeyQueue=[]
             case "forest_f":
                 scene = forest_f.update(main, scene, font, scene["forest_f_var"])
             case "forest_g":
                 scene = forest_g.update(main, scene, font, scene["forest_g_var"])
             case "forest_h":
                 scene = forest_h.update(main, scene, font, scene["forest_h_var"])
-            
+            case "labg_a":
+                print("last:",main.last_map_x,main.last_map_y)
+                print(main.char_u.map_x,main.char_u.map_y)
+                scene=labg_a.update(main,scene,font,scene["labg_a_var"])
+            case "labg_b":
+                import labg_b
+                main=labg_b.update(main)
+                main.MoveKeyQueue=[]
+                if main.game_state=="labg_a":
+                    main.last_map_x,main.last_map_y=(200,502)
             case "fight":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)
@@ -241,7 +259,6 @@ if __name__ == "__main__":
 
                 main.forest_battle_done = True 
                 main.MoveKeyQueue.clear()
-
             case "pause_menu":
                 pause_menu.update(main, scene["pause_menu_var"])
                 
