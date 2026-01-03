@@ -1,13 +1,14 @@
 {
     "chapter": 1,
-    "money": 100,
-    "playtime": 120.17217540740967,
+    "money": 78,
+    "playtime": 7.562350749969482,
+    "timestamp": "2026-01-03 22:44",
     "volume": 0.5,
     "sfx_volume": 0.5,
-    "party_data": [
+    "party": [
         {
             "name": "U",
-            "desc": "\u5167\u5411 \u4e0d\u64c5\u4ea4\u6d41",
+            "desc": "內向 不擅交流",
             "hp": 80,
             "max_hp": 100,
             "runes": []
@@ -41,37 +42,32 @@
             "runes": []
         }
     ],
-    "upgrade_log": [],
-    "timestamp": "01/03 17:56",
     "inventory": [
         {
-            "name": "\u80fd\u91cf\u98f2\u6599",
-            "desc": "\u80fd\u91cf+3",
+            "name": "堅果棒",
+            "desc": "恢復 10 HP",
             "type": "consumable",
-            "effect": "ENG +3",
-            "icon_file": "enrgdrnk.png",
-            "count": 0
+            "icon_file": "icon_food.png",
+            "count": 1
         },
         {
-            "name": "\u5805\u679c\u68d2",
-            "desc": "\u8840\u91cf\u56de\u5fa920%",
+            "name": "能量飲料",
+            "desc": "恢復 20 HP",
             "type": "consumable",
-            "effect": "HP +20%",
-            "icon_file": "nutbar.png",
-            "count": 0
+            "icon_file": "icon_potion.png",
+            "count": 1
         },
         {
-            "name": "\u7a7a\u767d\u7b26\u6587",
-            "desc": "\u9ede\u64ca\u958b\u555f\u523b\u5370\u9078\u55ae",
-            "type": "rune",
-            "effect": "Rune",
-            "icon_file": "rune_empty.png",
-            "count": 0
+            "name": "空白符文",
+            "desc": "可注入技能",
+            "type": "material",
+            "icon_file": "icon_rune.png",
+            "count": 1
         }
     ],
     "player_pos": [
-        288,
-        508
+        2539,
+        544
     ],
-    "scene_name": "labg_a"
+    "scene_name": "home"
 }

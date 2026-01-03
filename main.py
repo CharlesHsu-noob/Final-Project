@@ -56,7 +56,6 @@ def main_initiate():
     main.state_pos["labg_a"] = [2480, 508]
 
     # 音效資產載入 (for pause_menu volume control)
-    # 這邊假設你有一個地方載入音效，若無可先留空，或在這裡載入
     main.sound_assets = {} 
 
     setup.music_setup(main)
@@ -202,10 +201,19 @@ if __name__ == "__main__":
         match main.game_state:
             case "start_menu":
                 start_menu.update(main, start_menu_var)
+            
             case "home":
+                # 【修改】崩潰修復：若 home_var 為空 (例如讀檔後)，重新執行 setup
+                if scene.get("home_var") is None:
+                    scene["home_var"] = home.setup(main)
                 scene = home.update(main, scene, font, scene["home_var"])
+            
             case "forest_a":
+                # 建議加上相同保護
+                if scene.get("forest_a_var") is None: 
+                    scene["forest_a_var"] = forest_a.setup(main)
                 scene = forest_a.update(main, scene, font, scene["forest_a_var"])
+            
             case "forest_b":
                 scene = forest_b.update(main, scene, font, scene["forest_b_var"])
             case "forest_c":
@@ -225,7 +233,6 @@ if __name__ == "__main__":
             case "forest_h":
                 scene = forest_h.update(main, scene, font, scene["forest_h_var"])
             case "labg_a":
-                # print(main.char_u.map_x,main.char_u.map_y) # 移除 debug print 保持乾淨
                 scene=labg_a.update(main,scene,font,scene["labg_a_var"])
             case "labg_b":
                 import labg_b
