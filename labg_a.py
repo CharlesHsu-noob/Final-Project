@@ -47,9 +47,13 @@ def setup(game:xo.VAR) ->xo.VAR:
 
 def update(game:xo.VAR,scene:dict,font,forest_c:xo.VAR) -> dict:
     movequeue: list = game.MoveKeyQueue
+    if game.last_game_state=="labg_b":
+        game.char_u.map_x,game.char_u.map_y=game.state_pos["labg_a"]
+        print("set pos to labg_a(",game.state_pos["labg_a"],")")
     game.last_map_x = game.char_u.map_x
     game.last_map_y = game.char_u.map_y
     game.screen.blit(forest_c.black_bg, (0, 0))
+
     xo.move_update(
         game,
         scene,

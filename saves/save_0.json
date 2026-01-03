@@ -1,7 +1,7 @@
 {
     "chapter": 1,
     "money": 100,
-    "playtime": 120.17217540740967,
+    "playtime": 149.98117399215698,
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party_data": [
@@ -42,7 +42,7 @@
         }
     ],
     "upgrade_log": [],
-    "timestamp": "01/03 17:56",
+    "timestamp": "01/03 22:42",
     "inventory": [
         {
             "name": "\u80fd\u91cf\u98f2\u6599",
@@ -70,8 +70,8 @@
         }
     ],
     "player_pos": [
-        288,
+        1404,
         508
     ],
-    "scene_name": "labg_a"
+    "scene_name": "labg_c"
 }

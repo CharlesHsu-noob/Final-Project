@@ -2,7 +2,7 @@ import pygame as pg
 import XddObjects as xo
 import setup
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
-import labg_a
+import labg_a,labg_c
 from gamedata import GameData
 import fight 
 
@@ -54,6 +54,7 @@ def main_initiate():
     main.state_pos["forest_g"] = [3750, 750]
     main.state_pos["forest_h"] = [2180, 672]
     main.state_pos["labg_a"] = [2480, 508]
+    main.state_pos["labg_c"]=[1500,508]
 
     # 音效資產載入 (for pause_menu volume control)
     # 這邊假設你有一個地方載入音效，若無可先留空，或在這裡載入
@@ -78,6 +79,7 @@ def main_initiate():
     scene["forest_g_var"] = forest_g.setup(main)
     scene["forest_h_var"] = forest_h.setup(main)
     scene["labg_a_var"]=labg_a.setup(main)
+    scene["labg_c_var"]=labg_c.setup(main)
 
     # -------------------------------------------------------------
     # 【修改：不自動讀檔，而是初始化空資料】
@@ -140,7 +142,8 @@ if __name__ == "__main__":
         "forest_g_var": xo.VAR(),
         "forest_h_var": xo.VAR(),
         "pause_menu_var": xo.VAR(),
-        "labg_a_var": xo.VAR()
+        "labg_a_var": xo.VAR(),
+        "labg_c_var": xo.VAR(),
     }
     
     main_initiate()
@@ -194,10 +197,10 @@ if __name__ == "__main__":
                 main.last_game_state != "pause_menu" and \
                 main.game_state != "pause_menu": 
             main.play_animation = True
-        
+        '''
         if main.game_state != "pause_menu":
              main.last_game_state = main.game_state
-
+        '''
         # ------------------ 2. 場景更新 (Match Case) ------------------
         match main.game_state:
             case "start_menu":
@@ -229,10 +232,18 @@ if __name__ == "__main__":
                 scene=labg_a.update(main,scene,font,scene["labg_a_var"])
             case "labg_b":
                 import labg_b
-                main=labg_b.update(main)
+                if main.last_game_state=="labg_c":
+                    main=labg_b.update(main,True)
+                    main.state_pos["labg_c"]=[1500,508]
+                else:
+                    main=labg_b.update(main)
+                    main.state_pos["labg_a"] = [2480, 508]
                 main.MoveKeyQueue=[]
-                if main.game_state=="labg_a":
-                    main.last_map_x,main.last_map_y=(200,502)
+                main.last_game_state="labg_b"
+
+                continue
+            case "labg_c":
+                scene=labg_c.update(main,scene,font,scene["labg_c_var"])
             case "fight":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)
@@ -259,7 +270,9 @@ if __name__ == "__main__":
                 if main.game_state != "pause_menu":
                     print("no game state:", main.game_state)
                     main.running = False
-        
+
+        if main.game_state != "pause_menu":
+             main.last_game_state = main.game_state
         # ------------------ 3. 戰鬥觸發判定 ------------------
         
         target_x = 2453

@@ -1,5 +1,5 @@
 import XddObjects as xo
-def update(main)->xo.VAR:
+def update(main,goal:bool=False,ini_x:int=1300,ini_y:int=400)->xo.VAR:
     import pygame as pg
     import math
     import sys
@@ -123,7 +123,7 @@ def update(main)->xo.VAR:
 
                 scaled_img = pg.transform.smoothscale(original, (new_w, PLAYER_TARGET_HEIGHT))
                 player_images.append(scaled_img)
-                print(f"已載入並縮放: {f_name} -> {new_w}x{PLAYER_TARGET_HEIGHT}")
+                #print(f"已載入並縮放: {f_name} -> {new_w}x{PLAYER_TARGET_HEIGHT}")
             else:
                 player_images.append(original)
 
@@ -182,8 +182,8 @@ def update(main)->xo.VAR:
         def __init__(self, col=1, row=1):
             self.col = col
             self.row = row
-            self.x = OFFSET_X + col * GRID_SIZE + GRID_SIZE//2
-            self.y = OFFSET_Y + row * GRID_SIZE + GRID_SIZE//2
+            self.x =ini_x #OFFSET_X + col * GRID_SIZE + GRID_SIZE//2
+            self.y =ini_y #OFFSET_Y + row * GRID_SIZE + GRID_SIZE//2
             self.holding = None
             self.adjust_mode = False
 
@@ -224,7 +224,7 @@ def update(main)->xo.VAR:
     laser_source = (OFFSET_X + GRID_SIZE//2, OFFSET_Y + GRID_SIZE//2)
     laser_direction = (1.0, 0.3)
     goal_tile = grid[COLS-2][ROWS-2]
-    goal_passed = False
+    goal_passed = goal
 
     # ----------------- 助手函式 -----------------
     def draw_laser_emitter():
@@ -560,7 +560,7 @@ def update(main)->xo.VAR:
             if char_x<20 and goal_passed:
                 main.game_state="labg_c"
                 return main
-            elif char_x>1346:
+            elif char_x>1346 and goal_passed:
                 main.game_state="labg_a"
                 return main
         #print(player.pos,goal_passed)
