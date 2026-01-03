@@ -265,25 +265,25 @@ class characterObject(pg.sprite.Sprite):
         if pressKeyQueue:
             latest_key = pressKeyQueue[-1]
             
-            if latest_key == pg.K_w:
+            if latest_key in [pg.K_w,pg.K_UP] :
                 self.map_y-=self.v
                 self.dy = -self.v
                 self.move_state = "up"
                 self.is_move = True
                 #self.flipy = 1
-            elif latest_key == pg.K_s:
+            elif latest_key in [pg.K_s,pg.K_DOWN]:
                 self.map_y+=self.v
                 self.dy = self.v
                 self.move_state = "down"
                 self.is_move = True
                 #self.flipy = 0
-            elif latest_key == pg.K_a:
+            elif latest_key in [pg.K_a,pg.K_LEFT]:
                 self.map_x-=self.v
                 self.dx = -self.v
                 self.move_state = "left"
                 self.is_move = True
                 self.flipx = 0
-            elif latest_key == pg.K_d:
+            elif latest_key in [pg.K_d,pg.K_RIGHT]:
                 self.map_x+=self.v
                 self.dx = self.v
                 self.move_state = "right"

@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
             if main.game_state != "pause_menu":
                 if event.type == pg.KEYDOWN:
-                    if event.key in [pg.K_w, pg.K_a, pg.K_s, pg.K_d]:
+                    if event.key in [pg.K_w, pg.K_a, pg.K_s, pg.K_d,pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT]:
                         if event.key not in main.MoveKeyQueue:
                             main.MoveKeyQueue.append(event.key)
                     elif event.key in [pg.K_f]:
@@ -231,7 +231,6 @@ if __name__ == "__main__":
             case "forest_h":
                 scene = forest_h.update(main, scene, font, scene["forest_h_var"])
             case "labg_a":
-                print("last:",main.last_map_x,main.last_map_y)
                 print(main.char_u.map_x,main.char_u.map_y)
                 scene=labg_a.update(main,scene,font,scene["labg_a_var"])
             case "labg_b":
