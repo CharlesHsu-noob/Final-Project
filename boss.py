@@ -161,7 +161,7 @@ try:
     hit_sound = pg.mixer.Sound(os.path.join('voice', 'bgm', 'snake_d.ogg'))
 except:
     try:
-        hit_sound = pg.mixer.Sound(os.path.join('..', 'sean', 'battle', 'voice', 'snake_d.ogg'))
+        hit_sound = pg.mixer.Sound(os.path.join('voice', 'sound effects', 'snake_d.ogg'))
     except:
         print("Warning: snake_d.ogg not found")
         hit_sound = None
@@ -720,6 +720,7 @@ while running:
             t = overlay_font.render("成功!", True, GREEN)
             tr = t.get_rect(center=(WIDTH // 2, HEIGHT // 2))
             screen.blit(t, tr.topleft)
+            
 
     legend = [
         "方向鍵: 移動 / 轉動鏡子 (調整模式)",
