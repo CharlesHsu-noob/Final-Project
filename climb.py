@@ -28,7 +28,7 @@ def update(screen_w,screen_h):
     scaled_width =2074 #int(WORLD_WIDTH * SCALE)
     scaled_height =921 #int(WORLD_HEIGHT * SCALE)
     offset_x = (WINDOW_WIDTH - scaled_width) // 2
-    offset_y = (WINDOW_HEIGHT - scaled_height) // 2 +160
+    offset_y = (WINDOW_HEIGHT - scaled_height) // 2 +8
 
 
     # ================= 顏色 =================
@@ -93,12 +93,12 @@ def update(screen_w,screen_h):
         (1060, 322),(1140, 322),(1220, 322),(1300, 322),
         (550, 240),(850, 230),(650, 160),(700, 90),(630, 10),
         (550, -80),(620, -160),(760, -230),(800, -300),(750, -380),
-        (700, -450),(620, -530),(550, -590),(500, -640),(450, -693),(370, -693),(290, -693),(210, -693),(130, -693),(50, -693),(-30, -693)
+        (700, -450),(620, -530),(550, -590),(490, -640),(400, -693),(350, -693),(290, -693),(210, -693),(130, -693),
     ]
 
     # 定義要隱藏的岩石座標
     hidden_rock_coords = [
-        (290, -693), (210, -693), (130, -693), (50, -693), (-30, -693)
+        (350, -693),(290, -693), (210, -693), (130, -693)
     ]
 
     platforms = [pg.Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT) for x, y in platform_positions]
@@ -117,7 +117,7 @@ def update(screen_w,screen_h):
     # y = -5000 (設很高，確保往上跳也擋得住)
     # w = 40 (厚度)
     # h = 6000 (高度，確保覆蓋整個遊戲垂直範圍)
-    debug_wall = pg.Rect(320, 100, 40, 6000)
+    debug_wall = pg.Rect(350, 100, 40, 6000)
 
     # 將牆壁加入 platforms 列表，這樣它就會自動擁有碰撞和捲動功能
     platforms.append(debug_wall)
