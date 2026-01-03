@@ -1,0 +1,62 @@
+{
+    "chapter": 1,
+    "money": 100,
+    "playtime": 0.0012593269348144531,
+    "timestamp": "2026-01-04 01:37",
+    "volume": 0.5,
+    "sfx_volume": 0.5,
+    "party": [
+        {
+            "name": "U",
+            "desc": "內向 不擅交流",
+            "hp": 100,
+            "max_hp": 100,
+            "mp": 10,
+            "max_mp": 20,
+            "runes": []
+        },
+        {
+            "name": "K",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "W",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "C",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "O",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        }
+    ],
+    "inventory": [],
+    "player_pos": [
+        400,
+        300
+    ],
+    "scene_name": "HOME",
+    "upgrade_log": []
+}

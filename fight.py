@@ -4,6 +4,7 @@ import math
 import os
 from QTE_MLBmode import play_qte 
 from QTE_DBDmode import play_dbd_qte 
+from gamedata import GameData, save_game_to_file, load_game_from_file, update_specific_data
 
 # ==========================================
 # ★★★ 【全域輔助函式與設定】 ★★★
@@ -108,6 +109,27 @@ def run_battle(screen):
     WIDTH, HEIGHT = screen.get_size()
     clock = pygame.time.Clock()
 
+    # 指定存檔路徑
+    save_path = os.path.join("saves", "save_0.json")
+
+    # ★ 1. 進入戰鬥前：讀取並「立刻存檔」 (建立 Checkpoint)
+    try:
+        game_data_obj, loaded_inv, loaded_pos, loaded_scene = load_game_from_file(save_path)
+        print(f"[系統] 戰鬥載入存檔成功。當前金錢: {game_data_obj.money}")
+        
+        # 這裡執行存檔，確保如果玩家戰敗並重啟遊戲，會回到剛進入戰鬥的狀態
+        #save_game_to_file(game_data_obj, loaded_inv, loaded_pos, loaded_scene, filename=save_path)
+        print("[系統] 戰前自動存檔完成 (Checkpoint 建立)。")
+        
+    except Exception as e:
+        print(f"[系統] 戰鬥讀檔失敗 ({e})，使用預設值")
+        game_data_obj = GameData()
+        loaded_inv = []
+        loaded_pos = (0,0)
+        loaded_scene = "map"
+
+    hero_data = game_data_obj.party_data[0]
+
     # --- 資料池設定 ---
     ENEMY_POOL = [
         {"name": "Snake", "img": "forest_snake.png", "hp": 80, "scale": 0.28, "pos_y": 0.45, "fx": "bite"},
@@ -194,7 +216,8 @@ def run_battle(screen):
     SELECT_OFFSET_X = 0
     SELECT_OFFSET_Y = 230 
 
-    PLAYER_NAME = "Mortis"; NAME_X, NAME_Y = 0.086, 0.877; TEXT_COLOR_GRAY = (220, 220, 220) 
+    PLAYER_NAME = hero_data["name"]
+    NAME_X, NAME_Y = 0.086, 0.877; TEXT_COLOR_GRAY = (220, 220, 220) 
     PLAYER_STATS = {"ATK": 17, "CRT": 25, "DEF": 25, "INT": 23}
     STATS_X, STATS_Y = 0.725, 0.73; STATS_SPACING = 0.06 
 
@@ -218,11 +241,11 @@ def run_battle(screen):
 
     impact_state = {"active": False, "max_alpha": 0, "current_alpha": 0, "shake_amp": 0, "duration": 0, "timer": 0}
     
-    # 狀態變數
-    PLAYER_MAX_HP = 100
-    PLAYER_HP = PLAYER_MAX_HP
-    MAX_ENERGY = 10
-    player_energy = MAX_ENERGY
+    PLAYER_MAX_HP = hero_data["max_hp"]
+    PLAYER_HP = hero_data["hp"]
+    MAX_ENERGY = hero_data.get("max_mp", 10)
+    player_energy = hero_data.get("mp", 10)
+
     player_buffer_hp = PLAYER_HP
     player_buffer_timer = 0
     BUFFER_SPEED = 40
@@ -230,13 +253,14 @@ def run_battle(screen):
     
     game_over = False
     victory = False
+    rewards_processed = False 
     
     options = ["Normal Attack", "Special Attack", "Defend", "End this round"]
     energy_cost = [3, 5, 4, 0]
     selected_option = None
     
     energy_recover_queue = []
-    energy_recover_timer = [0] * MAX_ENERGY
+    energy_recover_timer = [0] * int(MAX_ENERGY)
     shield_turns = 0
     recover_timer = 0
     ENERGY_DELAY = 0.1
@@ -279,6 +303,7 @@ def run_battle(screen):
         nonlocal recover_timer, player_energy, pending_energy_recover
         nonlocal enemy_action_timer, enemy_turn_active, PLAYER_HP, game_over, victory
         nonlocal confetti_particles, player_buffer_hp, player_buffer_timer, current_attack_img
+        nonlocal rewards_processed
         
         shake_x, shake_y = 0, 0
         total_shake = 0
@@ -353,7 +378,7 @@ def run_battle(screen):
             screen.blit(stats_font.render(s_str, True, (0, 0, 0)), (stats_sx + 2, cy + 2))
             screen.blit(stats_font.render(s_str, True, TEXT_COLOR_GRAY), (stats_sx, cy))
 
-        for i in range(MAX_ENERGY):
+        for i in range(int(MAX_ENERGY)):
             if energy_recover_timer[i] > 0: energy_recover_timer[i] = max(0, energy_recover_timer[i] - dt)
 
         if not is_background:
@@ -385,7 +410,7 @@ def run_battle(screen):
                 if energy_recover_queue:
                     recover_timer += dt
                     if recover_timer >= ENERGY_DELAY:
-                        idx = energy_recover_queue.pop(0); energy_recover_timer[idx] = 1.0; recover_timer = 0
+                        idx = energy_recover_queue.pop(0); energy_recover_timer[int(idx)] = 1.0; recover_timer = 0
 
         sx, sy, g_y, g_x = WIDTH * OPT_X, HEIGHT * OPT_Y, HEIGHT * OPT_GAP, WIDTH * OPT_COL_GAP
         for i, option in enumerate(options):
@@ -426,10 +451,19 @@ def run_battle(screen):
                     screen.blit(s, (final_x, final_y))
             else: bite_anim["active"] = False
 
+        # ★★★ [修復] 在這裡補上這行變數定義，避免 NameError ★★★
         ex, ey, es, ew, eh = WIDTH * 0.33, HEIGHT * 0.88, WIDTH * 0.035, 8, 16
-        for i in range(MAX_ENERGY):
-            cx = ex + i * es
-            pts = [(cx, ey), (cx + ew, ey - eh), (cx + 2*ew, ey), (cx + ew, ey + eh)]
+
+        for i in range(int(MAX_ENERGY)):
+            # 10個一排，超過換行
+            row = i // 10
+            col = i % 10
+            
+            cx = ex + col * es
+            cy = ey + row * 45  
+            
+            pts = [(cx, cy), (cx + ew, cy - eh), (cx + 2*ew, cy), (cx + ew, cy + eh)]
+            
             current_cost = 0
             if selecting_target and target_skill is not None:
                 current_cost = energy_cost[target_skill]
@@ -439,7 +473,7 @@ def run_battle(screen):
             if energy_recover_timer[i] > 0:
                 s = pygame.Surface((ew*2+2, eh*2+2), pygame.SRCALPHA)
                 pygame.draw.polygon(s, (0, 255, 255, int(255 * energy_recover_timer[i])), [(0, eh), (ew, 0), (ew*2, eh), (ew, eh*2)])
-                screen.blit(s, (cx, ey - eh))
+                screen.blit(s, (cx, cy - eh))
             elif current_cost > 0:
                 if i < player_energy - current_cost: pygame.draw.polygon(screen, (0, 255, 255), pts)
                 elif i >= player_energy - current_cost and i < player_energy: pygame.draw.polygon(screen, (0, 255, 255), pts, 1)
@@ -455,11 +489,16 @@ def run_battle(screen):
                     p['y'] += p['speed_y'] * dt * 60
                     pygame.draw.rect(screen, p['color'], (p['x'], p['y'], 10, 10))
                 txt = result_font.render("VICTORY", True, (255, 215, 0))
+                
+                # ★★★ 勝利結算 (金錢+50) ★★★
+                if not rewards_processed:
+                    game_data_obj.money += 50
+                    rewards_processed = True
+                    print("[系統] 戰鬥勝利，金錢 +50")
             else:
                 txt = result_font.render("GAME OVER", True, (255, 50, 50))
             screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - txt.get_height()))
             
-            # ★★★ 修改：文字改成 Press 'SPACE' to Return ★★★
             res = font.render("Press 'SPACE' to Return", True, (255, 255, 255))
             screen.blit(res, (WIDTH // 2 - res.get_width() // 2, HEIGHT // 2 + HEIGHT * 0.1))
 
@@ -471,14 +510,33 @@ def run_battle(screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             
-            # ★★★ 修改：遊戲結束狀態下的按鍵判定 ★★★
+            # ★★★ 2. 戰鬥結束結算邏輯 ★★★
             if game_over or victory:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE: running = False
                     
-                    # 按下 SPACE 離開迴圈，這會結束 run_battle 函式
-                    # 主程式 main.py 接到控制權後會繼續執行剩下的程式碼（回到地圖）
                     if event.key == pygame.K_SPACE: 
+                        if victory:
+                            # 勝利：更新狀態並存檔
+                            hero_data["hp"] = int(max(0, PLAYER_HP))
+                            hero_data["mp"] = int(player_energy)
+                            
+                            try:
+                                save_game_to_file(game_data_obj, loaded_inv, loaded_pos, loaded_scene, filename=save_path)
+                                print(f"[系統] 戰鬥勝利存檔完畢 (HP: {hero_data['hp']}, MP: {hero_data['mp']})")
+                            except Exception as e:
+                                print(f"[錯誤] 存檔寫入失敗: {e}")
+                        
+                        elif game_over:
+                            # 失敗：不存檔！並重新讀取 save_0.json 恢復記憶體中的狀態
+                            try:
+                                temp_data, _, _, _ = load_game_from_file(save_path)
+                                game_data_obj.money = temp_data.money
+                                game_data_obj.party_data = temp_data.party_data
+                                print(f"[系統] 戰鬥失敗，已讀取戰前存檔 (回到原點)。")
+                            except Exception as e:
+                                print(f"[錯誤] 讀取備份失敗: {e}")
+
                         running = False 
                 continue 
             

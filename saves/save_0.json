@@ -1,73 +1,106 @@
 {
     "chapter": 1,
-    "money": 78,
-    "playtime": 7.562350749969482,
-    "timestamp": "2026-01-03 22:44",
+    "money": 89,
+    "playtime": 33.592544078826904,
+    "timestamp": "2026-01-04 02:16",
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
         {
             "name": "U",
-            "desc": "內向 不擅交流",
-            "hp": 80,
+            "desc": "\u5167\u5411 \u4e0d\u64c5\u4ea4\u6d41",
+            "hp": 100,
             "max_hp": 100,
+            "mp": 3,
+            "max_mp": 20,
             "runes": []
         },
         {
             "name": "K",
             "desc": "???",
-            "hp": 45,
-            "max_hp": 60,
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
             "runes": []
         },
         {
             "name": "W",
             "desc": "???",
-            "hp": 60,
-            "max_hp": 70,
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
             "runes": []
         },
         {
             "name": "C",
             "desc": "???",
-            "hp": 50,
-            "max_hp": 60,
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
             "runes": []
         },
         {
             "name": "O",
             "desc": "???",
-            "hp": 110,
-            "max_hp": 120,
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
             "runes": []
         }
     ],
     "inventory": [
         {
-            "name": "堅果棒",
-            "desc": "恢復 10 HP",
+            "name": "\u5805\u679c\u68d2",
+            "desc": "\u6062\u5fa9 20% HP",
             "type": "consumable",
             "icon_file": "icon_food.png",
-            "count": 1
+            "effect": "HP +20%",
+            "count": -1
         },
         {
-            "name": "能量飲料",
-            "desc": "恢復 20 HP",
+            "name": "\u80fd\u91cf\u98f2\u6599",
+            "desc": "\u6062\u5fa9 3 MP",
             "type": "consumable",
             "icon_file": "icon_potion.png",
-            "count": 1
+            "effect": "MP +3",
+            "count": -1
         },
         {
-            "name": "空白符文",
-            "desc": "可注入技能",
+            "name": "\u7a7a\u767d\u7b26\u6587",
+            "desc": "\u53ef\u6ce8\u5165\u6280\u80fd",
             "type": "material",
             "icon_file": "icon_rune.png",
-            "count": 1
+            "effect": "None",
+            "count": -1
         }
     ],
     "player_pos": [
         2539,
         544
     ],
-    "scene_name": "home"
+    "scene_name": "home",
+    "upgrade_log": [
+        {
+            "timestamp": "2026-01-04 02:16:24",
+            "char": "U",
+            "source": "\u5805\u679c\u68d2",
+            "effect": "HP +20%"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:26",
+            "char": "U",
+            "source": "\u80fd\u91cf\u98f2\u6599",
+            "effect": "MP +3"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:28",
+            "char": "U",
+            "source": "\u7a7a\u767d\u7b26\u6587",
+            "effect": "None"
+        }
+    ]
 }

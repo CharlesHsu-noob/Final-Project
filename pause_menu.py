@@ -91,11 +91,10 @@ def setup(main):
         v.bg = pg.Surface((v.s_x(640), v.s_y(420))); v.bg.fill(v.C['WHITE'])
     v.bg_rect = v.bg.get_rect(center=(main.w//2, main.h//2))
 
-    # 【修改 2】連結 Main 的 GameData，不重複創建
+    # 連結 Main 的 GameData
     if hasattr(main, "game_data"):
         v.game_data = main.game_data
     else:
-        # 防呆
         v.game_data = GameData()
 
     v.save_slots = [None] * 3
@@ -110,7 +109,7 @@ def setup(main):
     v.item_map = {}
     for t in v.ITEM_TEMPLATES: v.item_map[t["name"]] = t["icon_file"]
 
-    # 預設物品數量 -1 (顯示 0)
+    # 預設物品
     for init in [{"name":"能量飲料","count":-1}, {"name":"堅果棒","count":-1}, {"name":"空白符文","count":-1}]:
         tmpl = next((t for t in v.ITEM_TEMPLATES if t["name"] == init["name"]), None)
         if tmpl:
@@ -123,7 +122,6 @@ def setup(main):
     v.btn_cont = s_rect(0,0,140,40); v.btn_cont.center = (s_x(225), s_y(210))
     v.btn_exit = s_rect(0,0,140,40); v.btn_exit.center = (s_x(225), s_y(440))
     
-    # 初始化 Slider，使用 game_data 的當前數值
     v.slider_m = Slider(s_rect(130, 290, 200, 5), v.game_data.volume)
     v.slider_s = Slider(s_rect(130, 360, 200, 5), v.game_data.sfx_volume)
     
@@ -155,23 +153,15 @@ def setup(main):
 
 # ================= 邏輯處理 =================
 
-# 【修改 3】音量更新函式：分開控制 BGM 和 SFX
 def update_volume(main, v):
-    # 1. 音樂 (BGM) - 控制 voice/bgm 下的檔案
     vol_music = v.slider_m.get_value()
-    v.game_data.volume = vol_music
-    # Pygame 的 music 模組專門控制背景音樂 (bgm)
-    pg.mixer.music.set_volume(vol_music)
-
-    # 2. 音效 (SFX) - 控制 voice/sound effects 下的檔案
     vol_sfx = v.slider_s.get_value()
+    v.game_data.volume = vol_music
     v.game_data.sfx_volume = vol_sfx
-    
-    # 我們假設 main 裡面有一個 sound_assets 字典存放所有載入的音效 (fox_a.ogg, owl_a.ogg 等)
-    # 如果有的話，遍歷並更新它們的音量
+    pg.mixer.music.set_volume(vol_music)
     if hasattr(main, "sound_assets") and isinstance(main.sound_assets, dict):
         for sound in main.sound_assets.values():
-            if isinstance(sound, pg.mixer.Sound):
+            if hasattr(sound, "set_volume"):
                 sound.set_volume(vol_sfx)
 
 def refresh_slots(v):
@@ -182,7 +172,6 @@ def refresh_slots(v):
         except: v.save_slots[i] = None
 
 def save_slot(main, v, idx):
-    # 確保 Slider 的數值有寫入 GameData
     v.game_data.volume = v.slider_m.get_value()
     v.game_data.sfx_volume = v.slider_s.get_value()
     
@@ -205,10 +194,8 @@ def load_slot(main, v, idx):
         
         inv, pos, scene_name = v.game_data.load_from_dict(data)
         
-        # 同步 Slider 顯示位置
         v.slider_m.set_value(v.game_data.volume)
         v.slider_s.set_value(v.game_data.sfx_volume)
-        # 立即應用讀取到的音量
         update_volume(main, v)
 
         if scene_name:
@@ -246,7 +233,8 @@ def use_item(v, idx):
     if v.inventory_list[idx]["type"] == "rune": v.pop_st, v.rune_cur, v.sel_rune = v.POP_RUNE, 0, None
     else: v.pop_st, v.tar_cur, v.sel_rune = v.POP_TARGET, 0, None
 
-def confirm_use(v):
+# ★★★ 修改 1: 增加 main 參數以便存檔 ★★★
+def confirm_use(main, v):
     tar = v.game_data.party_data[v.tar_cur]
     item = v.inventory_list[v.p2_i_idx]
     log = {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "char": tar["name"]}
@@ -259,16 +247,33 @@ def confirm_use(v):
     else:
         log["source"], log["effect"] = item["name"], item["effect"]
         v.msg = f"對 {tar['name']} 使用了 {item['name']}!"
-        if "HP" in item["effect"]: tar["hp"] = min(tar["hp"]+int(tar["max_hp"]*0.2), tar["max_hp"])
+        
+        # 效果字串判斷
+        eff = item.get("effect", "")
+        
+        # 1. HP 回復
+        if "HP" in eff: 
+            tar["hp"] = min(tar["hp"]+int(tar["max_hp"]*0.2), tar["max_hp"])
+            
+        # ★★★ 修改 2: 增加 MP (ENG) 回復判斷 ★★★
+        if "ENG" in eff or "MP" in eff:
+            cur_mp = tar.get("mp", 0)
+            max_mp = tar.get("max_mp", 10)
+            tar["mp"] = min(cur_mp + 3, max_mp)
     
     v.game_data.upgrade_log.append(log)
     item["count"] -= 1
+    
+    # ★★★ 修改 3: 使用道具後自動存檔 (強制存到 0 號位或當前位) ★★★
+    # 這裡預設存到 slot 0 (save_0.json)，確保資料寫入硬碟
+    save_slot(main, v, 0)
+    print(f"[系統] 道具使用完畢，已自動存檔。剩餘數量: {item['count']}")
+
     v.pop_st, v.msg_timer = v.POP_MSG, 50
 
 # ================= 輸入與更新 =================
 
 def update(main, v):
-    # --- 1. 資料同步 ---
     if hasattr(main, "game_data"):
         v.game_data = main.game_data
     
@@ -290,7 +295,6 @@ def update(main, v):
                 fname = v.item_map.get(item["name"])
                 item["icon"] = v.load_icon(fname) if fname else None
 
-    # --- 畫面繪製 ---
     if hasattr(main, "captured_screen"): main.screen.blit(main.captured_screen, (0,0))
     main.screen.blit(v.overlay, (0, 0))
     main.screen.blit(v.bg, v.bg_rect)
@@ -334,7 +338,6 @@ def inp_p1(main, v, e):
     if e.key == pg.K_UP: v.cursor[1] = 2 if c==1 and r>=3 else max(0, r-1)
     elif e.key == pg.K_DOWN: v.cursor[1] = min(3, r+1) if c==0 else min(4, r+1)
     
-    # 【修改 4】左右鍵調整 Slider 時，即時應用音量
     elif e.key == pg.K_LEFT:
         if c==1: v.cursor = [0, 3 if r==4 else min(r,3)]
         elif r==1: 
@@ -342,16 +345,16 @@ def inp_p1(main, v, e):
             update_volume(main, v) 
         elif r==2: 
             v.slider_s.change_value(-0.05)
-            update_volume(main, v)
+            update_volume(main, v) 
             
     elif e.key == pg.K_RIGHT:
         if c==0: 
             if r==1: 
                 v.slider_m.change_value(0.05)
-                update_volume(main, v)
+                update_volume(main, v) 
             elif r==2: 
                 v.slider_s.change_value(0.05)
-                update_volume(main, v)
+                update_volume(main, v) 
             else: v.cursor = [1, r]
         else:
             if r==3: v.cursor[1]=4
@@ -381,7 +384,8 @@ def inp_p2(main, v, e):
     elif v.pop_st == v.POP_TARGET:
         if e.key == pg.K_UP: v.tar_cur = max(0, v.tar_cur-1)
         elif e.key == pg.K_DOWN: v.tar_cur = min(len(v.game_data.party_data)-1, v.tar_cur+1)
-        elif e.key in (pg.K_RETURN, pg.K_z): confirm_use(v)
+        # ★★★ 修改 4: 傳入 main 以便 confirm_use 內部存檔 ★★★
+        elif e.key in (pg.K_RETURN, pg.K_z): confirm_use(main, v)
         elif e.key == pg.K_ESCAPE: v.pop_st = v.POP_RUNE if v.sel_rune else v.POP_NONE
         return
     elif v.pop_st == v.POP_MSG:
@@ -398,10 +402,11 @@ def inp_p2(main, v, e):
         if not v.inventory_list: v.p2_sect=0; return
         if e.key == pg.K_UP: v.p2_i_idx = max(0, v.p2_i_idx-1)
         elif e.key == pg.K_DOWN: v.p2_i_idx = min(len(v.inventory_list)-1, v.p2_i_idx+1)
-        elif e.key in (pg.K_PLUS, pg.K_EQUALS): v.inventory_list[v.p2_i_idx]["count"]+=1
-        elif e.key in (pg.K_MINUS, pg.K_KP_MINUS): 
-            if v.inventory_list[v.p2_i_idx]["count"] > -1: 
-                v.inventory_list[v.p2_i_idx]["count"] -= 1
+        # 測試用加減道具 (可選)
+        # elif e.key in (pg.K_PLUS, pg.K_EQUALS): v.inventory_list[v.p2_i_idx]["count"]+=1
+        # elif e.key in (pg.K_MINUS, pg.K_KP_MINUS): 
+        #     if v.inventory_list[v.p2_i_idx]["count"] > -1: 
+        #         v.inventory_list[v.p2_i_idx]["count"] -= 1
         elif e.key == pg.K_LEFT: v.p2_sect, v.p2_c_idx = 0, v.P2_CHAR_N-1
         elif e.key in (pg.K_RETURN, pg.K_z): use_item(v, v.p2_i_idx)
 
@@ -464,21 +469,41 @@ def draw_p2(main, v, s):
         d = v.game_data.party_data[i]
         n = v.font_mid.render(d['name'], True, C['DARK']); s.blit(n, n.get_rect(center=(r.centerx, r.y+sy(20))))
         
-        if d['name']=="U":
+        # 只針對 U 繪製立繪、血條與魔力條
+        if d['name'] == "U":
             try:
                 img = pg.image.load(os.path.join(v.IMG_CHAR, "U", "u_stand.png")).convert_alpha()
                 sc = min((r.w-sx(10))/img.get_width(), sy(65)/img.get_height())
-                s.blit(pg.transform.smoothscale(img, (int(img.get_width()*sc), int(img.get_height()*sc))), (r.x+sx(5), r.centery-sy(30)))
+                s.blit(pg.transform.smoothscale(img, (int(img.get_width()*sc), int(img.get_height()*sc))), (r.x+sx(5), r.centery-sy(35)))
             except: pass
         
-        bar = pg.Rect(r.x+sx(6), r.bottom-sy(25), r.w-sx(12), sy(12))
-        pg.draw.rect(s, (200,200,200), bar, border_radius=3)
-        if d['hp']>0: pg.draw.rect(s, (167,191,139), (bar.x, bar.y, bar.w*(d['hp']/d['max_hp']), bar.h), border_radius=3)
-        pg.draw.rect(s, (150,150,150), bar, 1, border_radius=3)
+            # HP 條
+            hp_rect = pg.Rect(r.x+sx(6), r.bottom-sy(38), r.w-sx(12), sy(8))
+            pg.draw.rect(s, (200,200,200), hp_rect, border_radius=3)
+            if d['max_hp'] > 0 and d['hp'] > 0:
+                w = hp_rect.w * (d['hp'] / d['max_hp'])
+                pg.draw.rect(s, (167,191,139), (hp_rect.x, hp_rect.y, w, hp_rect.h), border_radius=3)
+            pg.draw.rect(s, (150,150,150), hp_rect, 1, border_radius=3)
+
+            # MP 條
+            mp_rect = pg.Rect(r.x+sx(6), r.bottom-sy(25), r.w-sx(12), sy(8))
+            pg.draw.rect(s, (200,200,200), mp_rect, border_radius=3)
+            max_mp = d.get('max_mp', 0)
+            cur_mp = d.get('mp', 0)
+            if max_mp > 0 and cur_mp > 0:
+                w = mp_rect.w * (cur_mp / max_mp)
+                pg.draw.rect(s, (100, 180, 255), (mp_rect.x, mp_rect.y, w, mp_rect.h), border_radius=3)
+            pg.draw.rect(s, (150,150,150), mp_rect, 1, border_radius=3)
 
     pg.draw.rect(s, C['BG_MAIN'], v.desc_l, 2, sx(6))
     cd = v.game_data.party_data[v.p2_c_idx]
-    s.blit(v.font_small.render(f"[ {cd['name']} ]  HP: {cd['hp']}/{cd['max_hp']}", True, C['DARK']), (v.desc_l.x+sx(10), v.desc_l.y+sy(10)))
+    
+    # 描述欄資訊
+    status_str = f"[ {cd['name']} ]  HP: {cd['hp']}/{cd['max_hp']}"
+    if cd['name'] == "U":
+        status_str += f"  MP: {cd.get('mp',0)}/{cd.get('max_mp',0)}"
+        
+    s.blit(v.font_small.render(status_str, True, C['DARK']), (v.desc_l.x+sx(10), v.desc_l.y+sy(10)))
     s.blit(v.font_small.render("Runes: "+(", ".join(cd.get("runes",[])) or "None"), True, C['LIGHT']), (v.desc_l.x+sx(10), v.desc_l.y+sy(35)))
     draw_txt(s, cd['desc'], v.desc_l.x+sx(10), v.desc_l.y+sy(60), v.font_small, C['LIGHT'], sy(20))
 
