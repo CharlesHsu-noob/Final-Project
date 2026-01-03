@@ -2,7 +2,7 @@ import pygame as pg
 import XddObjects as xo
 import setup
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
-import labg_a,labg_c
+import labg_a, labg_c
 from gamedata import GameData
 import fight 
 
@@ -34,10 +34,22 @@ def main_initiate():
     main.is_pause = False
     main.play_animation = False
     
-    # ★★★ 2. 新增一個變數來記錄戰鬥是否完成 ★★★
+    # ★★★ 1. Glitch (變身) 相關變數 ★★★
+    main.is_glitching = False         # 是否正在播放進戰鬥前的特效
+    main.glitch_start_time = 0        # 特效開始時間
+    main.scaled_glitch_current = None # ★★★ 新增：用來存放縮放後符合主角大小的暫存圖片
+    try:
+        # 載入 Glitch 原始圖片
+        main.u_glitch_img_raw = pg.image.load("image/battle/u_glitch.png").convert_alpha()
+        print("[System] Glitch image loaded successfully.")
+    except Exception as e:
+        print(f"[Warning] Glitch image loading failed: {e}")
+        main.u_glitch_img_raw = None 
+    
+    # ★★★ 2. 戰鬥狀態變數 ★★★
     main.forest_battle_done = False 
     
-    # ★★★ 新增：用來記錄戰鬥前的位置變數 ★★★
+    # ★★★ 3. 戰鬥前位置紀錄 ★★★
     main.pre_fight_map = None
     main.pre_fight_pos = (0, 0)
 
@@ -54,16 +66,17 @@ def main_initiate():
     main.state_pos["forest_g"] = [3750, 750]
     main.state_pos["forest_h"] = [2180, 672]
     main.state_pos["labg_a"] = [2480, 508]
-    main.state_pos["labg_c"]=[1500,508]
+    main.state_pos["labg_c"] = [1500, 508]
 
-    # 音效資產載入 (for pause_menu volume control)
+    # 音效資產載入
     main.sound_assets = {} 
-
+    main.current_music = None 
     setup.music_setup(main)
     
     global start_menu_var
     start_menu_var = start_menu.setup(main)
     global scene
+    scene = {} 
     scene["pause_menu_var"] = pause_menu.setup(main)
 
     # -------------------------------------------------------------
@@ -77,16 +90,14 @@ def main_initiate():
     scene["forest_f_var"] = forest_f.setup(main)
     scene["forest_g_var"] = forest_g.setup(main)
     scene["forest_h_var"] = forest_h.setup(main)
-    scene["labg_a_var"]=labg_a.setup(main)
-    scene["labg_c_var"]=labg_c.setup(main)
+    scene["labg_a_var"] = labg_a.setup(main)
+    scene["labg_c_var"] = labg_c.setup(main)
 
     # -------------------------------------------------------------
-    # 【修改：不自動讀檔，而是初始化空資料】
+    # 【初始化遊戲資料】
     # -------------------------------------------------------------
-    
-    # 建立全新的遊戲資料與空背包
     main.game_data = GameData()
-    main.inventory = [] # 這裡先給空列表，pause_menu 會負責填入預設物品
+    main.inventory = [] 
     main.game_state = "start_menu"
     print("[System] 遊戲啟動，進入標題畫面")
 
@@ -97,24 +108,20 @@ def main_initiate():
     main.refreshing_pause_bg = False 
 
 def bgm_manager():
+    if not hasattr(main, 'music_playlist'): return
+
     if main.game_state == "pause_menu":
-        # 暫停時音量變小，但不切歌
         pg.mixer.music.set_volume(main.game_data.volume * 0.4)
         return
     
-    # 如果是在同一區的場景切換 (例如 forest_a -> forest_b)，不切歌
     if main.last_game_state.find("forest") != -1 and \
        main.game_state.find("forest") != -1:
         return
     
     if main.game_state in ["fight", "home"]:
-        # 這些場景可能有自己的 BGM 邏輯，這裡先略過
         return
 
-    # 根據場景播放音樂
     target_music = main.music_playlist.get(main.game_state)
-    
-    # 套用當前設定的音量
     pg.mixer.music.set_volume(main.game_data.volume)
     
     if target_music and (target_music != main.current_music):
@@ -158,7 +165,7 @@ if __name__ == "__main__":
 
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if main.game_state == "pause_menu":
-                    pass # 暫停選單內的 ESC 由 pause_menu 處理
+                    pass 
                 elif main.game_state != "start_menu": 
                     main.last_pause_state = main.game_state
                     main.game_state = "pause_menu"
@@ -167,12 +174,14 @@ if __name__ == "__main__":
 
             if main.game_state != "pause_menu":
                 if event.type == pg.KEYDOWN:
-                    if event.key in [pg.K_w, pg.K_a, pg.K_s, pg.K_d,pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT]:
-                        if event.key not in main.MoveKeyQueue:
-                            main.MoveKeyQueue.append(event.key)
-                    elif event.key in [pg.K_f]:
-                        if event.key not in main.InteractKeyQueue:
-                            main.InteractKeyQueue.append(event.key)
+                    # 如果正在 Glitch 變身中，鎖住按鍵輸入
+                    if not main.is_glitching:
+                        if event.key in [pg.K_w, pg.K_a, pg.K_s, pg.K_d,pg.K_UP, pg.K_LEFT, pg.K_DOWN, pg.K_RIGHT]:
+                            if event.key not in main.MoveKeyQueue:
+                                main.MoveKeyQueue.append(event.key)
+                        elif event.key in [pg.K_f]:
+                            if event.key not in main.InteractKeyQueue:
+                                main.InteractKeyQueue.append(event.key)
                     
                     # 測試鍵：按 K 強制進戰鬥
                     if event.key == pg.K_k:
@@ -196,23 +205,18 @@ if __name__ == "__main__":
                 main.last_game_state != "pause_menu" and \
                 main.game_state != "pause_menu": 
             main.play_animation = True
-        '''
-        if main.game_state != "pause_menu":
-             main.last_game_state = main.game_state
-        '''
+        
         # ------------------ 2. 場景更新 (Match Case) ------------------
         match main.game_state:
             case "start_menu":
                 start_menu.update(main, start_menu_var)
             
             case "home":
-                # 【修改】崩潰修復：若 home_var 為空 (例如讀檔後)，重新執行 setup
                 if scene.get("home_var") is None:
                     scene["home_var"] = home.setup(main)
                 scene = home.update(main, scene, font, scene["home_var"])
             
             case "forest_a":
-                # 建議加上相同保護
                 if scene.get("forest_a_var") is None: 
                     scene["forest_a_var"] = forest_a.setup(main)
                 scene = forest_a.update(main, scene, font, scene["forest_a_var"])
@@ -255,24 +259,20 @@ if __name__ == "__main__":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)
                 
-                # ★★★ 戰鬥結束後的處理：回到戰鬥前的地圖與位置 ★★★
+                # 戰鬥結束後的處理
                 if main.pre_fight_map:
                     main.game_state = main.pre_fight_map
-                    # 恢復座標
                     main.char_u.map_x = main.pre_fight_pos[0]
                     main.char_u.map_y = main.pre_fight_pos[1]
-                    
-                    # 稍微後退一點點，避免視覺上還黏在觸發點
                     main.char_u.map_x -= 50
                 else:
-                    # 如果沒有紀錄（防呆），預設回 forest_g
                     main.game_state = "forest_g"
 
                 main.forest_battle_done = True 
                 main.MoveKeyQueue.clear()
             case "pause_menu":
                 pause_menu.update(main, scene["pause_menu_var"])
-                
+            
             case _:
                 if main.game_state != "pause_menu":
                     print("no game state:", main.game_state)
@@ -280,26 +280,60 @@ if __name__ == "__main__":
 
         if main.game_state != "pause_menu":
              main.last_game_state = main.game_state
-        # ------------------ 3. 戰鬥觸發判定 ------------------
         
-        target_x = 2453
-        target_y_top = 600
-        target_y_bottom = 1200
-        tolerance_x = 20
+        # ------------------ 3. 戰鬥觸發判定 ------------------
 
-        # 請注意：這段邏輯是針對 forest_a，若你換地圖要改這裡
-        if main.game_state == "forest_a":
-            in_x = abs(main.char_u.map_x - target_x) <= tolerance_x
-            in_y = target_y_top <= main.char_u.map_y <= target_y_bottom
+        if main.game_state == "forest_b":
+            in_x = abs(main.char_u.map_y - 20) <= 1038
+            in_y = 1080 <= main.char_u.map_x <= 1512
 
+            # ★★★ 修改：戰鬥觸發 + 0.2 秒 Glitch 變身等待 ★★★
             if in_x and in_y and (not main.forest_battle_done):
-                # ★ 觸發時紀錄當前位置
-                main.pre_fight_map = main.game_state
-                main.pre_fight_pos = (main.char_u.map_x, main.char_u.map_y)
                 
-                main.game_state = "fight"
+                # A. 開始變身：第一次偵測到觸發
+                if not main.is_glitching:
+                    print("Battle Triggered! Starting Glitch...")
+                    main.is_glitching = True
+                    main.glitch_start_time = pg.time.get_ticks() # 記錄時間
+                    main.MoveKeyQueue.clear() # 讓主角停下來
+                    
+                    # ★★★ 新增：在這裡進行圖片縮放 ★★★
+                    # 確保原始圖和主角的 rect 都存在
+                    if main.u_glitch_img_raw and hasattr(main.char_u, 'rect'):
+                        # 抓取主角當下的寬高
+                        target_size = (main.char_u.rect.width, main.char_u.rect.height)
+                        # 將原始 Glitch 圖縮放到主角的大小，存入 scaled_glitch_current
+                        main.scaled_glitch_current = pg.transform.scale(main.u_glitch_img_raw, target_size)
+                    else:
+                        # 如果抓不到主角大小，就用原圖（防呆）
+                        main.scaled_glitch_current = main.u_glitch_img_raw
+                
+                # B. 變身中：檢查時間
+                else:
+                    current_time = pg.time.get_ticks()
+                    if current_time - main.glitch_start_time >= 200: # 0.2 秒
+                        # 時間到 -> 進戰鬥
+                        print("Glitch finished. Entering Fight Mode.")
+                        main.is_glitching = False
+                        main.scaled_glitch_current = None # 清空暫存圖
+                        
+                        main.pre_fight_map = main.game_state
+                        main.pre_fight_pos = (main.char_u.map_x, main.char_u.map_y)
+                        
+                        main.game_state = "fight"
 
-        # ------------------ 4. 畫面更新 ------------------
+        # ------------------ 4. 畫面更新 (含 Glitch 繪製) ------------------
+        
+        # ★★★ 關鍵修正：繪製縮放後的 Glitch 圖片 ★★★
+        if main.is_glitching and main.scaled_glitch_current:
+            if hasattr(main.char_u, 'rect'):
+                # 將縮放後的圖片中心對齊主角的中心
+                glitch_rect = main.scaled_glitch_current.get_rect(center=main.char_u.rect.center)
+                main.screen.blit(main.scaled_glitch_current, glitch_rect)
+            else:
+                # 防呆備用方案
+                main.screen.blit(main.scaled_glitch_current, (main.w//2 - 50, main.h//2 - 50))
+
         if main.refreshing_pause_bg:
             main.captured_screen = main.screen.copy()
             main.game_state = "pause_menu"
