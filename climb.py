@@ -57,7 +57,7 @@ class char(pg.sprite.Sprite):
         self.image=image
         self.rect=self.image.get_rect(center=(player_x,player_y))
 
-player_x = 1350
+player_x = 1250
 player_y = 300 # 玩家初始位置
 bg_scroll_anchor_y = 300 # 背景捲動基準點
 BG_SCROLL_ANCHOR_INITIAL = bg_scroll_anchor_y
