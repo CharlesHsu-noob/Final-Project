@@ -2,6 +2,9 @@ import os, json, time, pygame as pg
 from datetime import datetime
 import XddObjects as xo 
 
+# 【修改 1】直接從 gamedata.py 引入，不重複定義
+from gamedata import GameData
+
 # ================= 核心類別 =================
 
 class Slider:
@@ -24,48 +27,6 @@ class Slider:
         if fill_w > 0:
             pg.draw.rect(surface, c['BG_MAIN'], (self.rect.x, self.rect.y, fill_w, self.rect.height), border_radius=self.rect.height//2)
         pg.draw.circle(surface, c['DARK'], (self.rect.x + fill_w, self.rect.centery), self.rect.height//2 + 3)
-
-class GameData:
-    def __init__(self):
-        self.reset()
-    
-    def reset(self):
-        self.chapter = 1; self.money = 100; self.total_playtime = 0.0
-        self._session_start = time.time(); self.volume = 0.5; self.sfx_volume = 0.5
-        self.party_data = [
-            {"name": "U", "desc": "內向 不擅交流", "hp": 80, "max_hp": 100, "runes": []},
-            {"name": "K", "desc": "???", "hp": 45, "max_hp": 60, "runes": []},
-            {"name": "W", "desc": "???", "hp": 60, "max_hp": 70, "runes": []},
-            {"name": "C", "desc": "???", "hp": 50, "max_hp": 60, "runes": []}, 
-            {"name": "O", "desc": "???", "hp": 110, "max_hp": 120, "runes": []}  
-        ]
-        self.upgrade_log = []
-
-    def get_playtime(self): 
-        return self.total_playtime + (time.time() - self._session_start)
-
-    def to_dict(self, inventory_list, player_pos, current_scene):
-        save_inv = [{k:v for k,v in item.items() if k!="icon"} for item in inventory_list]
-        return {
-            "chapter": self.chapter, "money": self.money, 
-            "playtime": self.get_playtime(), "volume": self.volume, "sfx_volume": self.sfx_volume, 
-            "party_data": self.party_data, "upgrade_log": self.upgrade_log, 
-            "timestamp": datetime.now().strftime("%m/%d %H:%M"),
-            "inventory": save_inv, "player_pos": player_pos, "scene_name": current_scene
-        }
-
-    def load_from_dict(self, data):
-        self.chapter = data.get("chapter", 1)
-        self.money = data.get("money", 0)
-        self.total_playtime = data.get("playtime", 0.0)
-        self.volume = data.get("volume", 0.5)
-        self.sfx_volume = data.get("sfx_volume", 0.5)
-        self.party_data = data.get("party_data", self.party_data)
-        for char in self.party_data:
-            if "runes" not in char: char["runes"] = []
-        self.upgrade_log = data.get("upgrade_log", [])
-        self._session_start = time.time()
-        return data.get("inventory", []), data.get("player_pos", None), data.get("scene_name", None)
 
 # ================= Setup 初始化 =================
 
@@ -106,7 +67,7 @@ def setup(main):
 
     v.load_icon = lambda f: pg.image.load(os.path.join(v.IMG_BAG, f)).convert_alpha() if os.path.exists(os.path.join(v.IMG_BAG, f)) else None
     
-    # 符文圖片與資料
+    # 符文圖片
     v.rune_assets = {}
     rune_map = {"血量":"berkano","智力":"laguz","暴擊":"dagaz","能量":"sowilo","攻擊":"tiwaz","防禦":"algiz"}
     for n, f in rune_map.items():
@@ -130,13 +91,17 @@ def setup(main):
         v.bg = pg.Surface((v.s_x(640), v.s_y(420))); v.bg.fill(v.C['WHITE'])
     v.bg_rect = v.bg.get_rect(center=(main.w//2, main.h//2))
 
-    # 數據初始化
-    v.game_data = GameData()
+    # 【修改 2】連結 Main 的 GameData，不重複創建
+    if hasattr(main, "game_data"):
+        v.game_data = main.game_data
+    else:
+        # 防呆
+        v.game_data = GameData()
+
     v.save_slots = [None] * 3
     
     # 物品
     v.inventory_list = []
-    # 儲存模板以便後續填充
     v.ITEM_TEMPLATES = [
         {"name":"能量飲料", "desc":"能量+3", "type":"consumable", "effect":"ENG +3", "icon_file":"enrgdrnk.png"},
         {"name":"堅果棒", "desc":"血量回復20%", "type":"consumable", "effect":"HP +20%", "icon_file":"nutbar.png"},
@@ -145,8 +110,8 @@ def setup(main):
     v.item_map = {}
     for t in v.ITEM_TEMPLATES: v.item_map[t["name"]] = t["icon_file"]
 
-    # 【修正 1】將預設物品數量改為 0
-    for init in [{"name":"能量飲料","count":0}, {"name":"堅果棒","count":0}, {"name":"空白符文","count":0}]:
+    # 預設物品數量 -1 (顯示 0)
+    for init in [{"name":"能量飲料","count":-1}, {"name":"堅果棒","count":-1}, {"name":"空白符文","count":-1}]:
         tmpl = next((t for t in v.ITEM_TEMPLATES if t["name"] == init["name"]), None)
         if tmpl:
             item = tmpl.copy()
@@ -157,8 +122,11 @@ def setup(main):
     s_x, s_y, s_rect = v.s_x, v.s_y, v.s_rect
     v.btn_cont = s_rect(0,0,140,40); v.btn_cont.center = (s_x(225), s_y(210))
     v.btn_exit = s_rect(0,0,140,40); v.btn_exit.center = (s_x(225), s_y(440))
+    
+    # 初始化 Slider，使用 game_data 的當前數值
     v.slider_m = Slider(s_rect(130, 290, 200, 5), v.game_data.volume)
     v.slider_s = Slider(s_rect(130, 360, 200, 5), v.game_data.sfx_volume)
+    
     v.slots = [s_rect(470, 150+i*90, 200, 75) for i in range(3)]
     v.btn_save = s_rect(0,0,80,35); v.btn_save.center = (s_x(520), s_y(440))
     v.btn_load = s_rect(0,0,80,35); v.btn_load.center = (s_x(620), s_y(440))
@@ -180,14 +148,31 @@ def setup(main):
     v.POP_NONE, v.POP_RUNE, v.POP_TARGET, v.POP_MSG = 0, 1, 2, 3
     v.pop_st = v.POP_NONE; v.rune_cur = 0; v.tar_cur = 0; v.sel_rune = None
     v.msg = ""; v.msg_timer = 0; v.save_msg = ""; v.save_timer = 0; v.act_slot = 0
-    
-    # 【修正 2】加入 first_init 變數，防止 update 中取不到而閃退
     v.first_init = True
 
     refresh_slots(v)
     return v
 
 # ================= 邏輯處理 =================
+
+# 【修改 3】音量更新函式：分開控制 BGM 和 SFX
+def update_volume(main, v):
+    # 1. 音樂 (BGM) - 控制 voice/bgm 下的檔案
+    vol_music = v.slider_m.get_value()
+    v.game_data.volume = vol_music
+    # Pygame 的 music 模組專門控制背景音樂 (bgm)
+    pg.mixer.music.set_volume(vol_music)
+
+    # 2. 音效 (SFX) - 控制 voice/sound effects 下的檔案
+    vol_sfx = v.slider_s.get_value()
+    v.game_data.sfx_volume = vol_sfx
+    
+    # 我們假設 main 裡面有一個 sound_assets 字典存放所有載入的音效 (fox_a.ogg, owl_a.ogg 等)
+    # 如果有的話，遍歷並更新它們的音量
+    if hasattr(main, "sound_assets") and isinstance(main.sound_assets, dict):
+        for sound in main.sound_assets.values():
+            if isinstance(sound, pg.mixer.Sound):
+                sound.set_volume(vol_sfx)
 
 def refresh_slots(v):
     for i in range(3):
@@ -197,8 +182,10 @@ def refresh_slots(v):
         except: v.save_slots[i] = None
 
 def save_slot(main, v, idx):
+    # 確保 Slider 的數值有寫入 GameData
     v.game_data.volume = v.slider_m.get_value()
     v.game_data.sfx_volume = v.slider_s.get_value()
+    
     pos = (main.char_u.map_x, main.char_u.map_y) if hasattr(main, "char_u") else None
     scene = main.last_pause_state if hasattr(main, "last_pause_state") else main.game_state
     
@@ -216,16 +203,14 @@ def load_slot(main, v, idx):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         
-        # 載入資料到暫停選單的 game_data
         inv, pos, scene_name = v.game_data.load_from_dict(data)
         
-        # --- 同步回主程式物件 ---
-        if hasattr(main, "game_data"):
-            main.game_data.money = v.game_data.money
-            main.game_data.party_data = v.game_data.party_data
-            main.game_data.chapter = v.game_data.chapter
+        # 同步 Slider 顯示位置
+        v.slider_m.set_value(v.game_data.volume)
+        v.slider_s.set_value(v.game_data.sfx_volume)
+        # 立即應用讀取到的音量
+        update_volume(main, v)
 
-        # 轉換場景名稱 (轉小寫以對應 main.py 的 case)
         if scene_name:
             s_target = scene_name.lower()
             main.last_pause_state = s_target
@@ -233,13 +218,11 @@ def load_slot(main, v, idx):
             main.game_state = s_target
             main.refreshing_pause_bg = True
         
-        # 同步角色座標與碰撞箱
         if pos and hasattr(main, "char_u"):
             main.char_u.map_x, main.char_u.map_y = pos[0], pos[1]
             if hasattr(main.char_u, "rect"):
                 main.char_u.rect.x, main.char_u.rect.y = int(pos[0]), int(pos[1])
 
-        # 更新背包
         main.inventory = inv
         v.inventory_list = inv
         for it in v.inventory_list:
@@ -254,6 +237,12 @@ def load_slot(main, v, idx):
 
 def use_item(v, idx):
     if idx >= len(v.inventory_list): return
+    
+    if v.inventory_list[idx]["count"] <= -1:
+        v.msg = "數量不足！"
+        v.pop_st, v.msg_timer = v.POP_MSG, 30
+        return
+
     if v.inventory_list[idx]["type"] == "rune": v.pop_st, v.rune_cur, v.sel_rune = v.POP_RUNE, 0, None
     else: v.pop_st, v.tar_cur, v.sel_rune = v.POP_TARGET, 0, None
 
@@ -274,47 +263,34 @@ def confirm_use(v):
     
     v.game_data.upgrade_log.append(log)
     item["count"] -= 1
-    if item["count"] <= 0: v.inventory_list.pop(v.p2_i_idx); v.p2_i_idx = max(0, min(v.p2_i_idx, len(v.inventory_list)-1))
     v.pop_st, v.msg_timer = v.POP_MSG, 50
 
 # ================= 輸入與更新 =================
 
 def update(main, v):
-    # --- 1. 資料同步與強制初始化 ---
+    # --- 1. 資料同步 ---
     if hasattr(main, "game_data"):
         v.game_data = main.game_data
     
     if hasattr(main, "inventory"):
-        # 【初始化邏輯】: 若背包為空，將數量設為 0 的物品放入
         if v.first_init:
-            if not main.inventory: # 如果背包是空的
-                print("初始化：建立預設物品欄（數量為 0）...")
+            if not main.inventory:
                 new_items = []
-                
-                # 遍歷所有定義好的物品模板 (ITEM_TEMPLATES)
                 for t in v.ITEM_TEMPLATES:
                     item = t.copy()
-                    item["count"] = 0  # 強制設為 0
+                    item["count"] = -1
                     item["icon"] = v.load_icon(t["icon_file"])
                     new_items.append(item)
-                
-                # 將這些數量為 0 的物品放入主程式背包
                 main.inventory.extend(new_items)
-            
-            v.first_init = False # 確保只執行一次
+            v.first_init = False
 
-        # --- 2. 正常同步 ---
-        # 讓 v.inventory_list 指向 main.inventory
         v.inventory_list = main.inventory
-        
-        # --- 3. 圖片修復 ---
-        # 確保同步過來的物品有圖片 (防止讀檔後圖片遺失)
         for item in v.inventory_list:
             if "icon" not in item or item["icon"] is None:
                 fname = v.item_map.get(item["name"])
                 item["icon"] = v.load_icon(fname) if fname else None
 
-    # --- 畫面繪製 (保持不變) ---
+    # --- 畫面繪製 ---
     if hasattr(main, "captured_screen"): main.screen.blit(main.captured_screen, (0,0))
     main.screen.blit(v.overlay, (0, 0))
     main.screen.blit(v.bg, v.bg_rect)
@@ -344,12 +320,9 @@ def update(main, v):
 def handle_input(main, v, evt):
     if not v.ui_on or evt.type != pg.KEYDOWN: return
     
-    # [防呆機制]
     if evt.key == pg.K_ESCAPE and v.pop_st == v.POP_NONE:
-        # 嘗試讀取 last_pause_state，若無則讀取 last_game_state，再無則預設 "home"
         target = getattr(main, "last_pause_state", None)
         if not target: target = getattr(main, "last_game_state", "home")
-        
         main.game_state = target
         return
 
@@ -360,21 +333,33 @@ def inp_p1(main, v, e):
     c, r = v.cursor
     if e.key == pg.K_UP: v.cursor[1] = 2 if c==1 and r>=3 else max(0, r-1)
     elif e.key == pg.K_DOWN: v.cursor[1] = min(3, r+1) if c==0 else min(4, r+1)
+    
+    # 【修改 4】左右鍵調整 Slider 時，即時應用音量
     elif e.key == pg.K_LEFT:
         if c==1: v.cursor = [0, 3 if r==4 else min(r,3)]
-        elif r==1: v.slider_m.change_value(-0.05)
-        elif r==2: v.slider_s.change_value(-0.05)
+        elif r==1: 
+            v.slider_m.change_value(-0.05)
+            update_volume(main, v) 
+        elif r==2: 
+            v.slider_s.change_value(-0.05)
+            update_volume(main, v)
+            
     elif e.key == pg.K_RIGHT:
         if c==0: 
-            if r==1: v.slider_m.change_value(0.05)
-            elif r==2: v.slider_s.change_value(0.05)
+            if r==1: 
+                v.slider_m.change_value(0.05)
+                update_volume(main, v)
+            elif r==2: 
+                v.slider_s.change_value(0.05)
+                update_volume(main, v)
             else: v.cursor = [1, r]
         else:
             if r==3: v.cursor[1]=4
             else: v.fade_out, v.ui_on, v.alpha = True, False, 255
+            
     elif e.key in (pg.K_RETURN, pg.K_SPACE, pg.K_z):
         if c==0:
-            if r==0: # [修正] 繼續遊戲按鈕的防呆機制
+            if r==0:
                 target = getattr(main, "last_pause_state", None)
                 if not target: target = getattr(main, "last_game_state", "home")
                 main.game_state = target
@@ -385,7 +370,6 @@ def inp_p1(main, v, e):
             elif r==4: v.save_msg, v.save_timer = load_slot(main, v, v.act_slot), 60
 
 def inp_p2(main, v, e):
-    # Popup
     if v.pop_st == v.POP_RUNE:
         if e.key == pg.K_LEFT and v.rune_cur%2==1: v.rune_cur-=1
         elif e.key == pg.K_RIGHT and v.rune_cur%2==0: v.rune_cur+=1
@@ -403,7 +387,6 @@ def inp_p2(main, v, e):
     elif v.pop_st == v.POP_MSG:
         v.pop_st = v.POP_NONE; return
 
-    # Main Page
     if v.p2_sect == 0:
         if e.key == pg.K_LEFT:
             if v.p2_c_idx > 0: v.p2_c_idx -= 1
@@ -417,7 +400,8 @@ def inp_p2(main, v, e):
         elif e.key == pg.K_DOWN: v.p2_i_idx = min(len(v.inventory_list)-1, v.p2_i_idx+1)
         elif e.key in (pg.K_PLUS, pg.K_EQUALS): v.inventory_list[v.p2_i_idx]["count"]+=1
         elif e.key in (pg.K_MINUS, pg.K_KP_MINUS): 
-            if v.inventory_list[v.p2_i_idx]["count"]>1: v.inventory_list[v.p2_i_idx]["count"]-=1
+            if v.inventory_list[v.p2_i_idx]["count"] > -1: 
+                v.inventory_list[v.p2_i_idx]["count"] -= 1
         elif e.key == pg.K_LEFT: v.p2_sect, v.p2_c_idx = 0, v.P2_CHAR_N-1
         elif e.key in (pg.K_RETURN, pg.K_z): use_item(v, v.p2_i_idx)
 
@@ -430,7 +414,6 @@ def draw_p1(main, v, s):
     C = v.C; sx, sy = v.s_x, v.s_y
     s.blit(v.font_big.render("遊戲暫停", True, C['DARK']), (sx(150), sy(100)))
     
-    # Left
     sel = (v.cursor[0]==0)
     for i, (r, txt) in enumerate([(v.btn_cont,"繼續遊戲"),(None,""),(None,""),(v.btn_exit,"退出遊戲")]):
         if not r: continue
@@ -440,16 +423,12 @@ def draw_p1(main, v, s):
         t = v.font_mid.render(txt, True, C['MID'] if now else C['BG_MAIN'])
         s.blit(t, t.get_rect(center=r.center))
     
-    # Sliders
     for i, (sl, t) in enumerate([(v.slider_m,"音樂"),(v.slider_s,"音效")]):
         sl.draw(s, C)
         if sel and v.cursor[1]==i+1: pg.draw.rect(s, C['BG_SLOT'], sl.rect.inflate(10,20), 2, 5)
-        
-        # [修正處] 這裡原本是 v = sl.get_value()，改為 val
         val = sl.get_value() 
         s.blit(v.font_small.render(f"{t}: {int(val*100)}%", True, C['DARK']), (sx(180), sy(260+i*70)))
 
-    # Right Slots
     s.blit(v.font_mid.render("冒險紀錄", True, C['DARK']), (sx(530), sy(110)))
     for i, r in enumerate(v.slots):
         me = (v.cursor==[1,i]); act = (i==v.act_slot)
@@ -463,7 +442,6 @@ def draw_p1(main, v, s):
             s.blit(v.font_small.render(f"Time: {h:02d}:{m:02d}:{sc:02d}", True, C['LIGHT']), (r.x+sx(10), r.bottom-sy(25)))
         else: s.blit(v.font_mid.render("----", True, C['LIGHT']), (r.centerx-sx(10), r.centery-sy(5)))
     
-    # Save/Load Btn
     for r, t, f in [(v.btn_save,"存檔",v.cursor==[1,3]), (v.btn_load,"讀檔",v.cursor==[1,4])]:
         pg.draw.rect(s, C['BG_MAIN'], r, 2, sx(6))
         if f: pg.draw.rect(s, C['MID'], r, 3, sx(6))
@@ -479,7 +457,6 @@ def draw_p2(main, v, s):
     C = v.C; sx, sy = v.s_x, v.s_y
     s.blit(v.font_mid.render("角色", True, C['DARK']), (sx(210), sy(100)))
 
-    # Char List
     for i, r in enumerate(v.box_char):
         f = (v.p2_sect==0 and v.p2_c_idx==i and v.pop_st==v.POP_NONE)
         pg.draw.rect(s, C['WHITE'], r, border_radius=sx(6))
@@ -499,14 +476,12 @@ def draw_p2(main, v, s):
         if d['hp']>0: pg.draw.rect(s, (167,191,139), (bar.x, bar.y, bar.w*(d['hp']/d['max_hp']), bar.h), border_radius=3)
         pg.draw.rect(s, (150,150,150), bar, 1, border_radius=3)
 
-    # Char Detail
     pg.draw.rect(s, C['BG_MAIN'], v.desc_l, 2, sx(6))
     cd = v.game_data.party_data[v.p2_c_idx]
     s.blit(v.font_small.render(f"[ {cd['name']} ]  HP: {cd['hp']}/{cd['max_hp']}", True, C['DARK']), (v.desc_l.x+sx(10), v.desc_l.y+sy(10)))
     s.blit(v.font_small.render("Runes: "+(", ".join(cd.get("runes",[])) or "None"), True, C['LIGHT']), (v.desc_l.x+sx(10), v.desc_l.y+sy(35)))
     draw_txt(s, cd['desc'], v.desc_l.x+sx(10), v.desc_l.y+sy(60), v.font_small, C['LIGHT'], sy(20))
 
-    # Items
     s.blit(v.font_mid.render("背包", True, C['DARK']), (sx(540), sy(100)))
     for i, r in enumerate(v.box_item):
         if i >= len(v.inventory_list): break
@@ -514,9 +489,13 @@ def draw_p2(main, v, s):
         pg.draw.rect(s, C['WHITE'], r, border_radius=sx(6))
         pg.draw.rect(s, C['MID'] if f else C['LIGHT'], r, 3 if f else 1, sx(6))
         it = v.inventory_list[i]
+        
+        if it['count'] <= -1: txt_color = (180, 180, 180)
+        else: txt_color = C['DARK'] if f else C['LIGHT']
+
         if it.get("icon"): s.blit(pg.transform.smoothscale(it["icon"], (32,32)), (r.x+sx(5), r.centery-16))
-        s.blit(v.font_mid.render(it["name"], True, C['DARK'] if f else C['LIGHT']), (r.x+sx(45 if it.get("icon") else 10), r.centery-sy(15)))
-        s.blit(v.font_mid.render(f"x{it['count']}", True, C['DARK'] if f else C['BG_SLOT']), (r.right-sx(35), r.centery-sy(15)))
+        s.blit(v.font_mid.render(it["name"], True, txt_color), (r.x+sx(45 if it.get("icon") else 10), r.centery-sy(15)))
+        s.blit(v.font_mid.render(f"x{it['count'] + 1}", True, txt_color), (r.right-sx(35), r.centery-sy(15)))
 
     pg.draw.rect(s, C['BG_MAIN'], v.desc_r, 2, sx(6))
     if v.inventory_list and v.p2_i_idx < len(v.inventory_list):
