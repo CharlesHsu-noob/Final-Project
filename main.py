@@ -1,13 +1,9 @@
 import pygame as pg
 import XddObjects as xo
 import setup
-# 引入所有場景
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
 import labg_a
-# 【新增】引入讀檔模組
-from gamedata import load_game_from_file
-
-# ★★★ 1. 匯入你的 fight.py ★★★
+from gamedata import GameData
 import fight 
 
 def bg_size_correction(w: int, h: int) -> tuple[int, int]:
@@ -59,6 +55,10 @@ def main_initiate():
     main.state_pos["forest_h"] = [2180, 672]
     main.state_pos["labg_a"] = [2480, 508]
 
+    # 音效資產載入 (for pause_menu volume control)
+    # 這邊假設你有一個地方載入音效，若無可先留空，或在這裡載入
+    main.sound_assets = {} 
+
     setup.music_setup(main)
     
     global start_menu_var
@@ -80,26 +80,14 @@ def main_initiate():
     scene["labg_a_var"]=labg_a.setup(main)
 
     # -------------------------------------------------------------
-    # 【整合存檔系統】
+    # 【修改：不自動讀檔，而是初始化空資料】
     # -------------------------------------------------------------
-    game_data, inventory, loaded_pos, loaded_scene = load_game_from_file()
-    main.game_data = game_data
-    main.inventory = inventory
-
-    initial_pos = None
-    if loaded_scene and loaded_pos:
-        main.game_state = loaded_scene
-        initial_pos = loaded_pos
-        print(f"[System] 讀檔成功：進入 {loaded_scene}")
-    else:
-        main.game_state = "home" 
-        initial_pos = main.state_pos[main.game_state]
-        print("[System] 新遊戲開始")
-
-    if initial_pos:
-        main.char_u.map_x, main.char_u.map_y = initial_pos
-
-    # -------------------------------------------------------------
+    
+    # 建立全新的遊戲資料與空背包
+    main.game_data = GameData()
+    main.inventory = [] # 這裡先給空列表，pause_menu 會負責填入預設物品
+    main.game_state = "start_menu"
+    print("[System] 遊戲啟動，進入標題畫面")
 
     main.last_game_state = main.game_state
     main.last_pause_state = main.game_state
@@ -109,17 +97,24 @@ def main_initiate():
 
 def bgm_manager():
     if main.game_state == "pause_menu":
-        pg.mixer.music.set_volume(0.2)
-        return
-    elif main.last_game_state.find("forest") != -1 and \
-         main.game_state.find("forest") != -1:
+        # 暫停時音量變小，但不切歌
+        pg.mixer.music.set_volume(main.game_data.volume * 0.4)
         return
     
-    if main.game_state in ["fight","home"]:
+    # 如果是在同一區的場景切換 (例如 forest_a -> forest_b)，不切歌
+    if main.last_game_state.find("forest") != -1 and \
+       main.game_state.find("forest") != -1:
+        return
+    
+    if main.game_state in ["fight", "home"]:
+        # 這些場景可能有自己的 BGM 邏輯，這裡先略過
         return
 
+    # 根據場景播放音樂
     target_music = main.music_playlist.get(main.game_state)
-    pg.mixer.music.set_volume(0.5)
+    
+    # 套用當前設定的音量
+    pg.mixer.music.set_volume(main.game_data.volume)
     
     if target_music and (target_music != main.current_music):
         pg.mixer.music.fadeout(1000)
@@ -161,7 +156,7 @@ if __name__ == "__main__":
 
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 if main.game_state == "pause_menu":
-                    pass
+                    pass # 暫停選單內的 ESC 由 pause_menu 處理
                 elif main.game_state != "start_menu": 
                     main.last_pause_state = main.game_state
                     main.game_state = "pause_menu"
@@ -179,7 +174,6 @@ if __name__ == "__main__":
                     
                     # 測試鍵：按 K 強制進戰鬥
                     if event.key == pg.K_k:
-                        # ★ 紀錄當前狀態
                         main.pre_fight_map = main.game_state
                         main.pre_fight_pos = (main.char_u.map_x, main.char_u.map_y)
                         main.game_state = "fight"
@@ -231,7 +225,7 @@ if __name__ == "__main__":
             case "forest_h":
                 scene = forest_h.update(main, scene, font, scene["forest_h_var"])
             case "labg_a":
-                print(main.char_u.map_x,main.char_u.map_y)
+                # print(main.char_u.map_x,main.char_u.map_y) # 移除 debug print 保持乾淨
                 scene=labg_a.update(main,scene,font,scene["labg_a_var"])
             case "labg_b":
                 import labg_b
