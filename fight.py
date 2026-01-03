@@ -18,7 +18,7 @@ def load_img(filename, alpha=True):
     return None
 
 def load_sfx(filename):
-    path = os.path.join(current_path, "voice", "bgm", filename)
+    path = os.path.join(current_path, "voice", "Sound effects", filename)
     if os.path.exists(path):
         return pygame.mixer.Sound(path)
     return None
