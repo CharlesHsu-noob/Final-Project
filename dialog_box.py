@@ -1,9 +1,8 @@
 import pygame as pg
 import sys
 import os
-import json  # ★ 新增：因為下面有用 json.load
+import json 
 
-# ★ 1. 引入必要的存檔功能
 from gamedata import GameData, save_game_to_file, load_game_from_file, update_specific_data
 
 # ==========================
@@ -34,20 +33,6 @@ ITEM_DB = {
     "rune":  {"name": "空白符文", "desc": "可注入技能",  "type": "material",   "icon_file": "icon_rune.png", "effect": "None"}
 }
 
-pg.init()
-screen = pg.display.set_mode((WIDTH, HEIGHT))
-pg.display.set_caption("RPG 測試：指定讀取路徑版")
-
-# 設定字體
-try:
-    font_path = "C:\\Windows\\Fonts\\msjh.ttc"
-    font = pg.font.Font(font_path, 24)
-    small_font = pg.font.Font(font_path, 20)
-except:
-    font = pg.font.Font(None, 32)
-    small_font = pg.font.Font(None, 24)
-
-clock = pg.time.Clock()
 
 # ==========================
 # 2. 劇情腳本數據
@@ -93,9 +78,28 @@ DIALOGUES = {
 # ==========================
 class DialogueSystem:
     def __init__(self, screen, font, small_font, dialogue_data):
-        self.screen = screen; self.font = font; self.small_font = small_font; self.dialogue_data = dialogue_data; self.clock = pg.time.Clock()
+        # 這裡接收從 main.py 傳進來的 screen, font, small_font
+        self.screen = screen
+        self.font = font
+        self.small_font = small_font
+        self.dialogue_data = dialogue_data
+        self.clock = pg.time.Clock()
+        
+        # =====================================================
+        # ★★★ 關鍵修改：直接從 screen 取得真實寬高 ★★★
+        # =====================================================
+        real_width = self.screen.get_width()   # 取得視窗寬度
+        real_height = self.screen.get_height() # 取得視窗高度
+        
+# 改成懸浮樣式 (左右留 50px，底部留 30px)
+        UI_SETTINGS["BOX_W"] = real_width - 100           # 寬度 = 螢幕寬度 - 100 (左右各留空)
+        UI_SETTINGS["BOX_H"] = 150                        # 高度維持 150
+        UI_SETTINGS["BOX_X"] = 50                         # X 從 50 開始 (置中)
+        UI_SETTINGS["BOX_Y"] = real_height - 150 - 30     # Y = 螢幕底 - 高度 - 30 (往上浮一點)
 
     def _draw_box(self):
+        # ★ 使用動態傳入的 screen 大小來決定對話框位置 (讓對話框適應全螢幕)
+        # 如果你想固定位置，保持 UI_SETTINGS 即可；如果要置底，可以參考 screen.get_height()
         box = pg.Rect(UI_SETTINGS["BOX_X"], UI_SETTINGS["BOX_Y"], UI_SETTINGS["BOX_W"], UI_SETTINGS["BOX_H"])
         pg.draw.rect(self.screen, UI_SETTINGS["BOX_COLOR"], box); pg.draw.rect(self.screen, UI_SETTINGS["BORDER_COLOR"], box, 2)
         return box
@@ -193,22 +197,55 @@ def pack_inventory_for_save(inventory_dict):
             save_list.append(item_data)
     return save_list
 
+# ==========================
+# 4. 給 main.py 呼叫的初始化函式 (請新增這段)
+# ==========================
+def setup(main_obj, game_font):
+    """
+    初始化對話系統並掛載到 main 物件上，讓 main.py 可以使用
+    """
+    # 嘗試載入跟主程式一樣的字體，如果失敗則用預設
+    try:
+        font_path = "C:\\Windows\\Fonts\\msjh.ttc"
+        small_font = pg.font.Font(font_path, 20)
+    except:
+        small_font = pg.font.Font(None, 24)
+
+    # 實例化 DialogueSystem 並掛載到 main.dialogue_ui
+    # 這樣在 main.py 的任何地方都可以用 main.dialogue_ui.show(...)
+    main_obj.dialogue_ui = DialogueSystem(main_obj.screen, game_font, small_font, DIALOGUES)
+    
+    print("[System] 對話系統 (DialogueSystem) 掛載完成")
+
+# ★★★ 修改：將測試用的主程式獨立，避免 import 時自動執行 ★★★
 def main():
+    # 這裡才是初始化測試環境的地方
+    pg.init()
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    pg.display.set_caption("RPG 測試：獨立運行模式")
+    clock = pg.time.Clock()
+
+    # 字體設定也移進來，避免 main.py import 時被蓋掉
+    try:
+        font_path = "C:\\Windows\\Fonts\\msjh.ttc"
+        font = pg.font.Font(font_path, 24)
+        small_font = pg.font.Font(font_path, 20)
+    except:
+        font = pg.font.Font(None, 32)
+        small_font = pg.font.Font(None, 24)
+
     player = Player(400, 300)
     dlg_sys = DialogueSystem(screen, font, small_font, DIALOGUES)
     
     inventory = { "nut": -1, "drink": -1, "rune": -1 }
     
-    # ★★★ 修改: 指定存檔路徑 (Final-Project\saves\save_0.json) ★★★
     save_path = os.path.join("Final-Project", "saves", "save_0.json")
     valid_save_found = False
 
     try:
         if os.path.exists(save_path):
             with open(save_path, "r", encoding="utf-8") as f:
-                json.load(f) # 檢查 JSON 格式
-            
-            # 這裡必須將路徑傳給 load_game_from_file，否則它會去讀預設路徑
+                json.load(f) 
             game_data, loaded_inv_list, loaded_pos, loaded_scene = load_game_from_file(save_path)
             valid_save_found = True
             print(f"[系統] 成功讀取存檔: {save_path}")
@@ -220,13 +257,9 @@ def main():
         print(f"[系統] 正在建立初始存檔於 {save_path} ...")
         game_data = GameData()
         loaded_inv_list = []
-        
-        # 確保資料夾存在
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        # 建立存檔時也要指定路徑
         save_game_to_file(game_data, pack_inventory_for_save(inventory), (400, 300), "HOME", filename=save_path)
 
-    # 2. 恢復背包
     reverse_map = {v['name']: k for k, v in ITEM_DB.items()}
     if loaded_inv_list and isinstance(loaded_inv_list, list):
         for item in loaded_inv_list:
@@ -238,7 +271,7 @@ def main():
     
     scene = "HOME"
     player.rect.topleft = (400, 300)
-    print(f"[系統] 遊戲載入完成 (強制回家)。金錢: ${game_data.money}, 背包: {inventory}")
+    print(f"[系統] 遊戲載入完成。金錢: ${game_data.money}, 背包: {inventory}")
 
     poem_seen = False; boat_unlocked = False; investigated_items = set(); can_leave_home = False
     home_triggers = {"document": pg.Rect(200, 200, 50, 50), "wire": pg.Rect(500, 400, 50, 50), "coat": pg.Rect(200, 400, 50, 50), "crayon": pg.Rect(500, 200, 50, 50), "door": pg.Rect(350, 550, 100, 20)}
@@ -261,7 +294,7 @@ def main():
                     if player.rect.colliderect(home_triggers["door"]):
                         if can_leave_home:
                             dlg_sys.show("go_out"); scene = "forest_b"; player.rect.topleft = (380, 500)
-                            print("[系統] 場景切換至 forest_b (未寫入存檔)")
+                            print("[系統] 場景切換至 forest_b")
                         else: dlg_sys.show("locked_door")
 
                 elif scene == "forest_b":
@@ -274,13 +307,11 @@ def main():
                                 key = res.split("_")[1]; cost = 3 if key in ["nut", "drink"] else 5
                                 if game_data.money >= cost:
                                     game_data.money -= cost; inventory[key] += 1; curr = "buy_success"
-                                    # ★ 買東西時存檔 (這裡如果 gamedata.py 沒改，可能會存到預設路徑，但目前先依照不存座標的邏輯)
                                     update_specific_data({"money": game_data.money, "inventory": pack_inventory_for_save(inventory)})
                                 else: curr = "buy_fail"
                             else: curr = res
                     elif player.rect.colliderect(world_triggers["home_in"]):
                         scene = "HOME"; player.rect.topleft = (380, 500)
-                        print("[系統] 場景切換至 HOME (未寫入存檔)")
                     elif player.rect.colliderect(world_triggers["dock"]):
                         if dlg_sys.show("dock")=="boat_yes":
                             if not poem_seen: dlg_sys.show("poem"); poem_seen=True; boat_unlocked=True
@@ -296,7 +327,7 @@ def main():
             if player.rect.colliderect(r): screen.blit(small_font.render("Z", True, (255,255,255)), (player.rect.centerx-5, player.rect.top-25))
         
         screen.blit(player.image, player.rect)
-        screen.blit(small_font.render(f"測試模式 | 場景:{scene} | 錢:${game_data.money} | 背包:{inventory}", True, (255,255,255)), (10,10))
+        screen.blit(small_font.render(f"測試模式 | 場景:{scene} | 錢:${game_data.money}", True, (255,255,255)), (10,10))
         pg.display.flip()
     pg.quit()
 
