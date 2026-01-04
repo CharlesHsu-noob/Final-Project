@@ -1,8 +1,8 @@
 {
     "chapter": 1,
     "money": 89,
-    "playtime": 95.12829399108887,
-    "timestamp": "2026-01-04 09:36",
+    "playtime": 119.10300326347351,
+    "timestamp": "2026-01-04 19:57",
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
@@ -79,10 +79,10 @@
         }
     ],
     "player_pos": [
-        336,
+        1260,
         508
     ],
-    "scene_name": "labg_a",
+    "scene_name": "labg_c",
     "upgrade_log": [
         {
             "timestamp": "2026-01-04 02:16:24",

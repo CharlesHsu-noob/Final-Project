@@ -2,7 +2,7 @@ import pygame as pg
 import XddObjects as xo
 import setup
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
-import labg_a, labg_c
+import labg_a, labg_c,labg_d
 from gamedata import GameData
 import fight 
 
@@ -67,6 +67,7 @@ def main_initiate():
     main.state_pos["forest_h"] = [2180, 672]
     main.state_pos["labg_a"] = [2480, 508]
     main.state_pos["labg_c"] = [1500, 508]
+    main.state_pos["labg_d"] = [760, 2220]
 
     # 音效資產載入
     main.sound_assets = {} 
@@ -150,6 +151,7 @@ if __name__ == "__main__":
         "pause_menu_var": xo.VAR(),
         "labg_a_var": xo.VAR(),
         "labg_c_var": xo.VAR(),
+        "labg_d_var": xo.VAR(),
     }
     
     main_initiate()
@@ -255,6 +257,8 @@ if __name__ == "__main__":
                 continue
             case "labg_c":
                 scene=labg_c.update(main,scene,font,scene["labg_c_var"])
+            case "labg_d":
+                scene=labg_d.update(main,scene,font,scene["labg_d_var"])
             case "fight":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)

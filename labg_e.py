@@ -612,3 +612,5 @@ while running:
 
 pg.quit()
 sys.exit()
+
+if __name__=="__main__":
