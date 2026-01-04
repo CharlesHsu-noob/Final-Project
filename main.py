@@ -38,6 +38,13 @@ def main_initiate():
     main.is_glitching = False         # 是否正在播放進戰鬥前的特效
     main.glitch_start_time = 0        # 特效開始時間
     main.scaled_glitch_current = None # ★★★ 新增：用來存放縮放後符合主角大小的暫存圖片
+    
+    # ==========================================
+    # ★★★ 新增：場景切換冷卻變數 ★★★
+    # ==========================================
+    main.last_switch_time = 0  # 記錄上一次傳送的時間 (毫秒)
+    main.door_cooldown = 1000   # 設定冷卻時間為 1000 毫秒 (1秒)，可自行調整
+
     try:
         # 載入 Glitch 原始圖片
         main.u_glitch_img_raw = pg.image.load("image/battle/u_glitch.png").convert_alpha()

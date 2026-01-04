@@ -1,0 +1,87 @@
+{
+    "chapter": 1,
+    "money": 100,
+    "playtime": 14.248276233673096,
+    "timestamp": "2026-01-04 21:20",
+    "volume": 0.5,
+    "sfx_volume": 0.5,
+    "party": [
+        {
+            "name": "U",
+            "desc": "\u5167\u5411 \u4e0d\u64c5\u4ea4\u6d41",
+            "hp": 100,
+            "max_hp": 100,
+            "mp": 10,
+            "max_mp": 20,
+            "runes": []
+        },
+        {
+            "name": "K",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "W",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "C",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "O",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        }
+    ],
+    "inventory": [
+        {
+            "name": "\u80fd\u91cf\u98f2\u6599",
+            "desc": "\u80fd\u91cf+3",
+            "type": "consumable",
+            "effect": "ENG +3",
+            "icon_file": "enrgdrnk.png",
+            "count": -1
+        },
+        {
+            "name": "\u5805\u679c\u68d2",
+            "desc": "\u8840\u91cf\u56de\u5fa920%",
+            "type": "consumable",
+            "effect": "HP +20%",
+            "icon_file": "nutbar.png",
+            "count": -1
+        },
+        {
+            "name": "\u7a7a\u767d\u7b26\u6587",
+            "desc": "\u9ede\u64ca\u958b\u555f\u523b\u5370\u9078\u55ae",
+            "type": "rune",
+            "effect": "Rune",
+            "icon_file": "rune_empty.png",
+            "count": -1
+        }
+    ],
+"player_pos": [
+        707,
+        870
+    ],
+    "scene_name": "forest_a",
+    "upgrade_log": []
+}
