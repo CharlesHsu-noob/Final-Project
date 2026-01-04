@@ -8,7 +8,7 @@ def setup(game:xo.VAR) ->xo.VAR:
     labg_c.wall_list=[]
     labg_c.door_list=[]
     ratio=game.zoom_ratio
-    wall_visible=True
+    wall_visible=False
 
     labg_c.black_bg = pg.Surface(game.screen.get_size())
     labg_c.black_bg.fill((0, 0, 0))
@@ -56,8 +56,8 @@ def setup(game:xo.VAR) ->xo.VAR:
                                      wall_visible)
     labg_c.door_list.append(labg_c.door_labg_e)
     labg_c.door_labg_d=xo.doorObject(pd.door_path,
-                                     (812,250),
-                                     (230,100),
+                                     (812,150),
+                                     (230,50),
                                        "labg_d",
                                      wall_visible)
     labg_c.door_list.append(labg_c.door_labg_d)

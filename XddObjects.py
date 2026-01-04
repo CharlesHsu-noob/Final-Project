@@ -528,7 +528,7 @@ def door_update(game,scene:dict,char,door_list,camera_x,camera_y) -> tuple[bool,
                 char.map_x-=40
             game.state_pos[game.game_state] = char.map_x, char.map_y
             print(game.game_state,":",game.state_pos[game.game_state])
-            if door.target in ["labg_b"]:
+            if door.target in ["labg_b","labg_e"]:
                 game.game_state = door.target
                 return True, scene
             char.map_x,char.map_y=game.state_pos[door.target]

@@ -3,7 +3,7 @@ import sys
 import XddObjects as xo
 import setup
 import start_menu, home, forest_a, forest_b, forest_c, forest_d, forest_f, forest_g, forest_h, pause_menu
-import labg_a, labg_c
+import labg_a, labg_c,labg_d
 from gamedata import GameData
 import fight 
 from dialog_box import DialogueSystem, DIALOGUES
@@ -76,10 +76,10 @@ def main_initiate():
     main.is_pause = False
     main.play_animation = False
     
-    # Glitch 變數
-    main.is_glitching = False         
-    main.glitch_start_time = 0        
-    main.scaled_glitch_current = None 
+    # ★★★ 1. Glitch (變身) 相關變數 ★★★
+    main.is_glitching = False         # 是否正在播放進戰鬥前的特效
+    main.glitch_start_time = 0        # 特效開始時間
+    main.scaled_glitch_current = None # ★★★ 新增：用來存放縮放後符合主角大小的暫存圖片
     try:
         main.u_glitch_img_raw = pg.image.load("image/battle/u_glitch.png").convert_alpha()
     except:
@@ -106,6 +106,7 @@ def main_initiate():
     main.state_pos["forest_h"] = [2180, 672]
     main.state_pos["labg_a"] = [2480, 508]
     main.state_pos["labg_c"] = [1500, 508]
+    main.state_pos["labg_d"] = [760, 2220]
 
     # 音效
     main.sound_assets = {} 
@@ -172,8 +173,12 @@ def bgm_manager():
     if main.last_game_state.find("forest") != -1 and \
        main.game_state.find("forest") != -1:
         return
+    if main.last_game_state.find("lab") != -1 and \
+       main.game_state.find("lab") != -1:
+        return
     
     if main.game_state in ["fight", "home"]:
+        pg.mixer.music.pause()
         return
 
     target_music = main.music_playlist.get(main.game_state)
@@ -208,6 +213,7 @@ if __name__ == "__main__":
         "pause_menu_var": xo.VAR(),
         "labg_a_var": xo.VAR(),
         "labg_c_var": xo.VAR(),
+        "labg_d_var": xo.VAR(),
     }
     
     main_initiate()
@@ -478,6 +484,14 @@ if __name__ == "__main__":
                 continue
             case "labg_c":
                 scene=labg_c.update(main,scene,font,scene["labg_c_var"])
+            case "labg_d":
+                scene=labg_d.update(main,scene,font,scene["labg_d_var"])
+            case "labg_e":
+                import labg_e
+                main=labg_e.update(main.w,main.h,main)
+                main.last_game_state="labg_e"
+                main.MoveKeyQueue=[]
+                continue
             case "fight":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)

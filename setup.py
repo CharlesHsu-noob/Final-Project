@@ -7,7 +7,8 @@ import XddObjects as xo
 def music_setup(game):
     game.music_playlist={
         "start_menu":os.path.join("voice","bgm","start_menu.wav"),
-        "forest":os.path.join("voice","bgm","forest_1.wav"),
+        "forest_a":os.path.join("voice","bgm","forest_1.wav"),
+        "labg_a":os.path.join("voice","bgm","lab_0.wav")
     }
     game.current_music=None
 
