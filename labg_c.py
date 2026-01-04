@@ -45,10 +45,10 @@ def setup(game:xo.VAR) ->xo.VAR:
     #door
     labg_c.door_labg_b=xo.doorObject(pd.door_path,
                                        (labg_c.bg.rect.width, 502),
-                                       (30,330),
+                                       (20,330),
                                        "labg_b",
                                        wall_visible)
-    labg_c.door_list.append(labg_c.door_labg_b)
+    #labg_c.door_list.append(labg_c.door_labg_b)
     labg_c.door_labg_e=xo.doorObject(pd.door_path,
                                      (0,502),
                                      (30,330),

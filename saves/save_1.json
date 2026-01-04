@@ -1,0 +1,106 @@
+{
+    "chapter": 1,
+    "money": 89,
+    "playtime": 95.12829399108887,
+    "timestamp": "2026-01-04 09:36",
+    "volume": 0.5,
+    "sfx_volume": 0.5,
+    "party": [
+        {
+            "name": "U",
+            "desc": "\u5167\u5411 \u4e0d\u64c5\u4ea4\u6d41",
+            "hp": 100,
+            "max_hp": 100,
+            "mp": 3,
+            "max_mp": 20,
+            "runes": []
+        },
+        {
+            "name": "K",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "W",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "C",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        },
+        {
+            "name": "O",
+            "desc": "???",
+            "hp": 0,
+            "max_hp": 0,
+            "mp": 0,
+            "max_mp": 0,
+            "runes": []
+        }
+    ],
+    "inventory": [
+        {
+            "name": "\u5805\u679c\u68d2",
+            "desc": "\u6062\u5fa9 20% HP",
+            "type": "consumable",
+            "icon_file": "icon_food.png",
+            "effect": "HP +20%",
+            "count": -1
+        },
+        {
+            "name": "\u80fd\u91cf\u98f2\u6599",
+            "desc": "\u6062\u5fa9 3 MP",
+            "type": "consumable",
+            "icon_file": "icon_potion.png",
+            "effect": "MP +3",
+            "count": -1
+        },
+        {
+            "name": "\u7a7a\u767d\u7b26\u6587",
+            "desc": "\u53ef\u6ce8\u5165\u6280\u80fd",
+            "type": "material",
+            "icon_file": "icon_rune.png",
+            "effect": "None",
+            "count": -1
+        }
+    ],
+    "player_pos": [
+        336,
+        508
+    ],
+    "scene_name": "labg_a",
+    "upgrade_log": [
+        {
+            "timestamp": "2026-01-04 02:16:24",
+            "char": "U",
+            "source": "\u5805\u679c\u68d2",
+            "effect": "HP +20%"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:26",
+            "char": "U",
+            "source": "\u80fd\u91cf\u98f2\u6599",
+            "effect": "MP +3"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:28",
+            "char": "U",
+            "source": "\u7a7a\u767d\u7b26\u6587",
+            "effect": "None"
+        }
+    ]
+}
