@@ -9,14 +9,14 @@ from gamedata import GameData
 
 SAVE_DIR = "saves"
 
-# 介面配色 (與 pause_menu 統一)
+# 介面配色
 C = {
     'DARK': (90, 74, 66), 'MID': (141, 114, 89), 'LIGHT': (166, 138, 118),
     'BG_MAIN': (191, 164, 139), 'BG_SLOT': (214, 132, 115), 'WHITE': (250, 248, 245)
 }
 
 def check_slots():
-    """讀取 3 個存檔的簡要資訊"""
+    """讀取 3 個存檔的簡要資訊 (僅供顯示用)"""
     slots_data = [None] * 3
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
@@ -31,51 +31,17 @@ def check_slots():
     return slots_data
 
 def enter_game(game, slot_idx):
-    """進入遊戲：有檔讀檔，沒檔新建"""
-    path = os.path.join(SAVE_DIR, f"save_{slot_idx}.json")
+    """
+    進入遊戲：設定存檔編號，並觸發 main.py 的載入流程
+    """
+    print(f"[StartMenu] 玩家選擇了存檔槽: {slot_idx}")
     
-    # 初始化資料
-    game.game_data = GameData()
-    game.inventory = [] 
+    # 1. 設定選擇的存檔編號
+    game.save_slot = slot_idx
     
-    if os.path.exists(path):
-        # --- 讀檔 ---
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            inv, pos, scene = game.game_data.load_from_dict(data)
-            game.inventory = inv
-            
-            # 修正圖片載入狀態
-            for item in game.inventory: item["icon"] = None 
-
-            if scene: game.game_state = scene.lower()
-            else: game.game_state = "home"
-            
-            if pos: game.char_u.map_x, game.char_u.map_y = pos
-            
-        except:
-            # 讀檔發生嚴重錯誤時，強制視為新遊戲
-            _create_new_game(game, path)
-    else:
-        # --- 新建 ---
-        _create_new_game(game, path)
-
-def _create_new_game(game, path):
-    """建立新遊戲初始狀態並佔用存檔格"""
-    game.game_data.reset()
-    game.inventory = [] 
-    
+    # 2. 強制切換狀態至 "home"
+    # 這會觸發 main.py 中的 Fail-Safe 或狀態切換偵測
     game.game_state = "home"
-    game.char_u.map_x, game.char_u.map_y = game.state_pos["home"]
-    
-    try:
-        base_data = game.game_data.to_dict([], (game.char_u.map_x, game.char_u.map_y), "home")
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(base_data, f, indent=4)
-    except:
-        pass
 
 # ================= Setup =================
 
@@ -84,8 +50,12 @@ def setup(game:xo.VAR) -> xo.VAR :
     start.button_list=[]
     
     # 背景
-    start.bg = pg.transform.scale(pg.image.load(pd.start_menu_bg_path).convert_alpha(), (game.menu_w,game.menu_h))
-    
+    try:
+        start.bg = pg.transform.scale(pg.image.load(pd.start_menu_bg_path).convert_alpha(), (game.menu_w,game.menu_h))
+    except:
+        start.bg = pg.Surface((game.menu_w, game.menu_h))
+        start.bg.fill(C['BG_MAIN'])
+
     # 按鈕
     start.lamp = xo.buttonObject(pd.lamp_path, (0.838*game.menu_w, 0.338*game.menu_h), (318*game.zoom_ratio, 438*game.zoom_ratio))
     start.notebook = xo.buttonObject(pd.notebook_path, (0.642*game.menu_w, 0.731*game.menu_h), (255*game.zoom_ratio, 290*game.zoom_ratio))
@@ -135,6 +105,7 @@ def update(game:xo.VAR, start:xo.VAR) -> None:
         button.update()
         game.screen.blit(button.image, button.rect)
         
+    # ================= 存檔選擇 UI =================
     if start.show_save_ui:
         # 半透明黑底
         overlay = pg.Surface((game.menu_w, game.menu_h))
@@ -177,7 +148,7 @@ def update(game:xo.VAR, start:xo.VAR) -> None:
                 d_surf = start.font_small.render(dur_str, True, C['LIGHT'])
                 game.screen.blit(d_surf, (r.x + 10, r.bottom - 25))
             else:
-                # 空存檔
+                # 空存檔 (顯示 Empty)
                 empty_surf = start.font_mid.render("---- Empty ----", True, C['LIGHT'])
                 game.screen.blit(empty_surf, empty_surf.get_rect(center=r.center))
 
@@ -200,22 +171,18 @@ def update(game:xo.VAR, start:xo.VAR) -> None:
 
         return
 
-    # ================= 主畫面邏輯 =================
+    # ================= 主畫面邏輯 (修正後) =================
     
     if start.notebook.ispress:
+        # 1. 讀取目前的存檔狀態 (即使是空的也要讀，為了顯示 "Empty")
         start.slots_data = check_slots()
         
-        # 判斷是否全空
-        all_empty = all(d is None for d in start.slots_data)
+        # 2. ★ 修正：無論有沒有存檔，都強制開啟選擇視窗
+        start.show_save_ui = True
         
-        if all_empty:
-            # 全空直接進 Slot 0
-            enter_game(game, 0)
-        else:
-            # 開啟選擇視窗
-            start.show_save_ui = True
-            start.notebook.ispress = False 
-            pg.time.wait(200)
+        # 3. 重置按鈕狀態並防抖動
+        start.notebook.ispress = False 
+        pg.time.wait(200)
 
     elif start.lamp.ispress:
         game.running = False

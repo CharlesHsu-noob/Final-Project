@@ -51,7 +51,7 @@ DIALOGUES = {
     "dock": [{"type": "text", "content": "要搭船嗎？"}, {"type": "choice", "options": [{"text": "是", "next": "boat_yes"}, {"text": "否", "next": "end"}]}],
     "boat_yes": [{"type": "end"}],
     "poem": [{"type": "text", "content": "我願順流而下 找尋她的方向"}, {"type": "end"}],
-    "store": [{"type": "choice", "options": [{"text": "購物", "next": "buy_menu"}, {"text": "對話", "next": "busnessman_talk"}, {"text": "離開", "next": "end"}]}],
+    "store": [{"type": "choice", "options": [{"text": "購物", "next": "buy_menu"}, {"text": "對話", "next": "busnessman_talk"}]}],
     "buy_menu": [{"type": "choice", "options": [{"text": "堅果棒 3$", "next": "buy_nut"}, {"text": "能量飲料 3$", "next": "buy_drink"}, {"text": "空白符文 5$", "next": "buy_rune"}, {"text": "返回", "next": "store"}]}],
     "buy_nut": [{"type": "end"}], "buy_drink": [{"type": "end"}], "buy_rune": [{"type": "end"}],
     "buy_success": [{"type": "text", "content": "交易成功！"}, {"type": "jump", "next": "buy_menu"}],

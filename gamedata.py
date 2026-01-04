@@ -7,6 +7,7 @@ from datetime import datetime
 # 設定預設存檔路徑
 # ==========================================
 SAVE_FOLDER = "saves"
+# 預設檔名保留給全域函式使用，GameData 實體會使用自己的 file_path
 SAVE_FILENAME = "save_0.json"
 SAVE_PATH = os.path.join(SAVE_FOLDER, SAVE_FILENAME)
 
@@ -31,11 +32,20 @@ DEFAULT_UNLOCK_FLAGS = {
 }
 
 class GameData:
-    def __init__(self):
+    # ★ 修改 1: 初始化接收 slot_index (預設 0)
+    def __init__(self, slot_index=0):
+        self.slot_index = slot_index
+        # 動態決定檔名
+        self.file_name = f"save_{slot_index}.json"
+        self.file_path = os.path.join(SAVE_FOLDER, self.file_name)
+        
         self.reset()
-        # 初始化時嘗試讀檔，若無檔案則保持 reset 狀態
-        if os.path.exists(SAVE_PATH):
-            load_game_from_file(self)
+        
+        # 初始化時嘗試讀檔，傳入計算好的路徑
+        if os.path.exists(self.file_path):
+            load_game_from_file(self, self.file_path)
+        else:
+            print(f"[System] 存檔 {self.file_name} 不存在，將使用新遊戲設定。")
     
     def reset(self):
         self.chapter = 1
@@ -64,8 +74,6 @@ class GameData:
 
     # ==========================================
     # ★★★ 相容性屬性 (為了配合 main.py) ★★★
-    # 這些屬性讓 main.py 可以用 .home_unlocked 讀取，
-    # 但實際數值是存在 self.unlock_flags["home_door"] 裡
     # ==========================================
     @property
     def intro_played(self): return self.unlock_flags.get("intro_played", False)
@@ -94,6 +102,9 @@ class GameData:
 
     def to_dict(self, inventory_list, player_pos, scene_name):
         clean_inventory = []
+        # 如果傳入 None (例如自動存檔沒拿到背包)，嘗試用空 list 避免報錯
+        if inventory_list is None: inventory_list = []
+        
         for item in inventory_list:
             clean_item = {k: v for k, v in item.items() if k != 'icon'}
             clean_inventory.append(clean_item)
@@ -112,7 +123,6 @@ class GameData:
             "player_pos": player_pos,
             "scene_name": scene_name,
             "upgrade_log": self.upgrade_log,
-            # ★ [新增] 存入解鎖狀態
             "unlock_flags": self.unlock_flags
         }
 
@@ -141,7 +151,6 @@ class GameData:
         
         # ★ [新增] 讀取解鎖狀態 + 自動修復舊存檔
         loaded_flags = data.get("unlock_flags", {})
-        # 確保每一個預設的 key 都在 (防止舊存檔缺 key)
         for key, default_val in DEFAULT_UNLOCK_FLAGS.items():
             if key not in loaded_flags:
                 loaded_flags[key] = default_val
@@ -164,26 +173,33 @@ class GameData:
         return inventory_list, player_pos, scene_name
 
     # ==========================================
-    # ★ main.py 呼叫的存檔接口
+    # ★ 修改 2: save 方法支援傳入參數並寫入指定檔案
     # ==========================================
-    def save(self):
-        """主程式呼叫此方法進行快速存檔"""
-        # 這裡需要傳入 main 物件的資訊，但因為 gamedata 獨立
-        # 我們假設這裡只存基礎資料，位置資訊可能需要從外部傳入
-        # 為了相容，我們呼叫 save_game_to_file，但位置先暫時用預設
-        # *注意*：最好在 main.py 裡呼叫 save_game_to_file 傳入完整資訊
-        # 但為了不改壞 main.py，這裡先做一個簡單的存檔
-        save_game_to_file(self, [], None, "unknown")
+    def save(self, inventory_list=None, player_pos=None, scene_name="home"):
+        """
+        主程式呼叫此方法進行存檔
+        會自動寫入 self.file_path 指定的檔案 (save_0.json, save_1.json...)
+        """
+        if inventory_list is None: inventory_list = []
+        if player_pos is None: player_pos = (0, 0)
+        
+        # 呼叫全域函式，但傳入此物件專屬的路徑
+        save_game_to_file(self, inventory_list, player_pos, scene_name, filename=self.file_path)
+
+    # 為了保持 load 邏輯的一致性，新增一個實例方法 (雖主要邏輯在 __init__)
+    def load_from_file(self):
+        return load_game_from_file(self, self.file_path)
 
 
 # ==========================================
-# 局部更新專用函式
+# 局部更新專用函式 (保留不變)
 # ==========================================
 def update_specific_data(updates_dict, filename=None):
+    # 若沒指定 filename，使用預設 (save_0)
+    # 注意：如果想支援多存檔，外部呼叫此函式時需要傳入正確的 path
     target_path = filename if filename else SAVE_PATH
     
     if not os.path.exists(target_path):
-        # print(f"[系統] 找不到存檔 {target_path}，無法進行局部更新。")
         return
 
     try:
@@ -206,14 +222,13 @@ def update_specific_data(updates_dict, filename=None):
         with open(target_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
             
-        print(f"[系統] 局部存檔成功！更新項目: {list(updates_dict.keys())}")
+        print(f"[系統] 局部存檔成功！更新項目: {list(updates_dict.keys())} -> {target_path}")
 
     except Exception as e:
         print(f"[系統] 局部更新失敗: {e}")
 
 # ==========================================
-# ★ [新功能] 解鎖並立刻存檔
-#  用途：對話結束後呼叫此函式，會同時更新遊戲記憶體與硬碟存檔
+# 解鎖並立刻存檔 (保留不變，建議外部呼叫時傳入 GameData 物件)
 # ==========================================
 def unlock_and_save(game_data, unlock_key, value=True):
     # 1. 更新記憶體中的狀態
@@ -222,32 +237,32 @@ def unlock_and_save(game_data, unlock_key, value=True):
         print(f"[劇情] 解鎖項目: {unlock_key} -> {value}")
         
         # 2. 立刻寫入硬碟 (局部更新)
+        # 注意：這裡使用 game_data.file_path 來確保寫入正確的存檔槽
+        path = getattr(game_data, 'file_path', None)
         update_specific_data({
             "unlock_flags": game_data.unlock_flags
-        })
+        }, filename=path)
     else:
         print(f"[系統] 錯誤：無效的解鎖 Key -> {unlock_key}")
 
 # ==========================================
-# 一般完整存檔功能 
+# 一般完整存檔功能 (保留不變)
 # ==========================================
 def save_game_to_file(game_data, inventory_list, player_pos, scene_name, filename=None):
     target_path = filename if filename else SAVE_PATH
     
-    # 建立存檔資料夾
     if not os.path.exists(SAVE_FOLDER):
         os.makedirs(SAVE_FOLDER)
 
     if scene_name == "world": scene_name = "forest_b"
 
-    # 若沒有提供位置，嘗試讀取舊檔的位置，避免位置重置
     final_pos = player_pos
     if final_pos is None or final_pos == (0,0):
         if os.path.exists(target_path):
             try:
                 with open(target_path, "r", encoding="utf-8") as f_old:
                     old_data = json.load(f_old)
-                    if player_pos is None: # 只在完全沒傳入位置時使用舊位置
+                    if player_pos is None: 
                         final_pos = old_data.get("player_pos", (0, 0))
             except:
                 pass
@@ -264,17 +279,14 @@ def save_game_to_file(game_data, inventory_list, player_pos, scene_name, filenam
         print(f"[系統] 存檔失敗: {e}")
 
 # ==========================================
-# 讀檔功能
+# 讀檔功能 (保留不變)
 # ==========================================
 def load_game_from_file(game_data_instance, filename=None):
-    """
-    讀取存檔並將資料填入傳入的 game_data_instance 物件中
-    """
     target_path = filename if filename else SAVE_PATH
     
     inventory_list = []
     player_pos = (0, 0)
-    scene_name = "home" 
+    scene_name = "home"
 
     if os.path.exists(target_path):
         try:

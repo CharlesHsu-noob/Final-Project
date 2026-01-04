@@ -105,28 +105,45 @@ class Enemy:
 # ==========================================
 # ★★★ 【主要戰鬥函式】 ★★★
 # ==========================================
-def run_battle(screen):
+# ★ 修改點 1: 增加參數，讓外部可以傳入資料 (預設為 None 以相容舊寫法)
+def run_battle(screen, game_data_obj=None, loaded_inv=None, loaded_pos=None, loaded_scene=None):
     WIDTH, HEIGHT = screen.get_size()
     clock = pygame.time.Clock()
 
     # 指定存檔路徑
     save_path = os.path.join("saves", "save_0.json")
+    
+    # 紀錄戰鬥結果狀態 (用於回傳)
+    battle_status = "ESCAPE" 
 
-    # ★ 1. 進入戰鬥前：讀取並「立刻存檔」 (建立 Checkpoint)
-    try:
-        game_data_obj, loaded_inv, loaded_pos, loaded_scene = load_game_from_file(save_path)
-        print(f"[系統] 戰鬥載入存檔成功。當前金錢: {game_data_obj.money}")
+    # ★ 修改點 2: 如果外部沒傳資料進來 (game_data_obj is None)，才執行讀檔
+    # 如果外部有傳，就直接使用外部傳進來的物件
+    if game_data_obj is None:
+        try:
+            game_data_obj, loaded_inv, loaded_pos, loaded_scene = load_game_from_file(save_path)
+            print(f"[系統] 戰鬥載入存檔成功。當前金錢: {game_data_obj.money}")
+            
+            # 這裡執行存檔，確保如果玩家戰敗並重啟遊戲，會回到剛進入戰鬥的狀態
+            #save_game_to_file(game_data_obj, loaded_inv, loaded_pos, loaded_scene, filename=save_path)
+            print("[系統] 戰前自動存檔完成 (Checkpoint 建立)。")
+            
+        except Exception as e:
+            print(f"[系統] 戰鬥讀檔失敗 ({e})，使用預設值")
+            game_data_obj = GameData()
+            loaded_inv = []
+            loaded_pos = (0,0)
+            loaded_scene = "map"
+    else:
+        # 如果是從 Main 傳進來的，確保變數都有值 (防呆)
+        if loaded_inv is None: loaded_inv = []
+        if loaded_pos is None: loaded_pos = (0,0)
+        if loaded_scene is None: loaded_scene = "map"
         
-        # 這裡執行存檔，確保如果玩家戰敗並重啟遊戲，會回到剛進入戰鬥的狀態
-        #save_game_to_file(game_data_obj, loaded_inv, loaded_pos, loaded_scene, filename=save_path)
-        print("[系統] 戰前自動存檔完成 (Checkpoint 建立)。")
-        
-    except Exception as e:
-        print(f"[系統] 戰鬥讀檔失敗 ({e})，使用預設值")
-        game_data_obj = GameData()
-        loaded_inv = []
-        loaded_pos = (0,0)
-        loaded_scene = "map"
+        # 這裡也可以選擇性存檔，視你的需求而定
+        try:
+             save_game_to_file(game_data_obj, loaded_inv, loaded_pos, loaded_scene, filename=save_path)
+        except:
+             pass
 
     hero_data = game_data_obj.party_data[0]
 
@@ -508,12 +525,16 @@ def run_battle(screen):
         dt = clock.tick(60) / 1000.0
         
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: running = False
+            if event.type == pygame.QUIT: 
+                running = False
+                battle_status = "QUIT" # 紀錄狀態
             
             # ★★★ 2. 戰鬥結束結算邏輯 ★★★
             if game_over or victory:
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE: running = False
+                    if event.key == pygame.K_ESCAPE: 
+                        running = False
+                        battle_status = "ESCAPE"
                     
                     if event.key == pygame.K_SPACE: 
                         if victory:
@@ -526,7 +547,9 @@ def run_battle(screen):
                                 print(f"[系統] 戰鬥勝利存檔完畢 (HP: {hero_data['hp']}, MP: {hero_data['mp']})")
                             except Exception as e:
                                 print(f"[錯誤] 存檔寫入失敗: {e}")
-                        
+                            
+                            battle_status = "VICTORY" # 紀錄狀態
+
                         elif game_over:
                             # 失敗：不存檔！並重新讀取 save_0.json 恢復記憶體中的狀態
                             try:
@@ -536,6 +559,8 @@ def run_battle(screen):
                                 print(f"[系統] 戰鬥失敗，已讀取戰前存檔 (回到原點)。")
                             except Exception as e:
                                 print(f"[錯誤] 讀取備份失敗: {e}")
+                            
+                            battle_status = "GAME_OVER" # 紀錄狀態
 
                         running = False 
                 continue 
@@ -548,7 +573,9 @@ def run_battle(screen):
                         selecting_target = False 
                         target_skill = None
                         selected_option = None
-                    else: running = False 
+                    else: 
+                        running = False 
+                        battle_status = "ESCAPE"
 
                 elif selecting_target:
                     if target_skill == 0:
@@ -629,6 +656,9 @@ def run_battle(screen):
 
     # 離開迴圈後停止音樂
     pygame.mixer.music.stop()
+    
+    # ★ 修改點 3: 回傳最新的資料物件與其他存檔資訊
+    return game_data_obj, loaded_inv, loaded_pos, loaded_scene, battle_status
 
 # ==========================================
 # ★★★ 【程式進入點】 ★★★
@@ -643,6 +673,7 @@ if __name__ == "__main__":
     pygame.display.set_caption("Fight Prototype")
     
     try:
+        # 單獨執行時，接收到的返回值雖然沒用到，但不會報錯
         run_battle(screen)
     finally:
         pygame.quit()

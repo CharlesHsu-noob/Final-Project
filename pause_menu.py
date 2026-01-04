@@ -233,7 +233,6 @@ def use_item(v, idx):
     if v.inventory_list[idx]["type"] == "rune": v.pop_st, v.rune_cur, v.sel_rune = v.POP_RUNE, 0, None
     else: v.pop_st, v.tar_cur, v.sel_rune = v.POP_TARGET, 0, None
 
-# ★★★ 修改 1: 增加 main 參數以便存檔 ★★★
 def confirm_use(main, v):
     tar = v.game_data.party_data[v.tar_cur]
     item = v.inventory_list[v.p2_i_idx]
@@ -248,14 +247,10 @@ def confirm_use(main, v):
         log["source"], log["effect"] = item["name"], item["effect"]
         v.msg = f"對 {tar['name']} 使用了 {item['name']}!"
         
-        # 效果字串判斷
         eff = item.get("effect", "")
-        
-        # 1. HP 回復
         if "HP" in eff: 
             tar["hp"] = min(tar["hp"]+int(tar["max_hp"]*0.2), tar["max_hp"])
             
-        # ★★★ 修改 2: 增加 MP (ENG) 回復判斷 ★★★
         if "ENG" in eff or "MP" in eff:
             cur_mp = tar.get("mp", 0)
             max_mp = tar.get("max_mp", 10)
@@ -264,11 +259,7 @@ def confirm_use(main, v):
     v.game_data.upgrade_log.append(log)
     item["count"] -= 1
     
-    # ★★★ 修改 3: 使用道具後自動存檔 (強制存到 0 號位或當前位) ★★★
-    # 這裡預設存到 slot 0 (save_0.json)，確保資料寫入硬碟
     save_slot(main, v, 0)
-    print(f"[系統] 道具使用完畢，已自動存檔。剩餘數量: {item['count']}")
-
     v.pop_st, v.msg_timer = v.POP_MSG, 50
 
 # ================= 輸入與更新 =================
@@ -335,26 +326,26 @@ def handle_input(main, v, evt):
 
 def inp_p1(main, v, e):
     c, r = v.cursor
-    if e.key == pg.K_UP: v.cursor[1] = 2 if c==1 and r>=3 else max(0, r-1)
-    elif e.key == pg.K_DOWN: v.cursor[1] = min(3, r+1) if c==0 else min(4, r+1)
+    if e.key == pg.K_UP: 
+        v.cursor[1] = 2 if c==1 and r>=3 else max(0, r-1)
+    elif e.key == pg.K_DOWN: 
+        # 修改處：取消 3->4 導向。c=1 時最大值設為 3 (存檔按鈕)
+        v.cursor[1] = min(3, r+1) if c==0 else min(3, r+1)
     
     elif e.key == pg.K_LEFT:
-        if c==1: v.cursor = [0, 3 if r==4 else min(r,3)]
+        if c==1: 
+            # 保留處：讀檔(r=4) 往左跳回 存檔(c=1, r=3)
+            if r == 4: v.cursor = [1, 3] 
+            else: v.cursor = [0, min(r,3)]
         elif r==1: 
-            v.slider_m.change_value(-0.05)
-            update_volume(main, v) 
+            v.slider_m.change_value(-0.05); update_volume(main, v) 
         elif r==2: 
-            v.slider_s.change_value(-0.05)
-            update_volume(main, v) 
+            v.slider_s.change_value(-0.05); update_volume(main, v) 
             
     elif e.key == pg.K_RIGHT:
         if c==0: 
-            if r==1: 
-                v.slider_m.change_value(0.05)
-                update_volume(main, v) 
-            elif r==2: 
-                v.slider_s.change_value(0.05)
-                update_volume(main, v) 
+            if r==1: v.slider_m.change_value(0.05); update_volume(main, v) 
+            elif r==2: v.slider_s.change_value(0.05); update_volume(main, v) 
             else: v.cursor = [1, r]
         else:
             if r==3: v.cursor[1]=4
@@ -366,7 +357,7 @@ def inp_p1(main, v, e):
                 target = getattr(main, "last_pause_state", None)
                 if not target: target = getattr(main, "last_game_state", "home")
                 main.game_state = target
-            elif r==3: main.running = False
+            elif r==3: main.game_state = "start_menu"
         else:
             if r<=2: v.act_slot = r
             elif r==3: v.save_msg, v.save_timer = save_slot(main, v, v.act_slot), 60
@@ -384,7 +375,6 @@ def inp_p2(main, v, e):
     elif v.pop_st == v.POP_TARGET:
         if e.key == pg.K_UP: v.tar_cur = max(0, v.tar_cur-1)
         elif e.key == pg.K_DOWN: v.tar_cur = min(len(v.game_data.party_data)-1, v.tar_cur+1)
-        # ★★★ 修改 4: 傳入 main 以便 confirm_use 內部存檔 ★★★
         elif e.key in (pg.K_RETURN, pg.K_z): confirm_use(main, v)
         elif e.key == pg.K_ESCAPE: v.pop_st = v.POP_RUNE if v.sel_rune else v.POP_NONE
         return
@@ -402,11 +392,6 @@ def inp_p2(main, v, e):
         if not v.inventory_list: v.p2_sect=0; return
         if e.key == pg.K_UP: v.p2_i_idx = max(0, v.p2_i_idx-1)
         elif e.key == pg.K_DOWN: v.p2_i_idx = min(len(v.inventory_list)-1, v.p2_i_idx+1)
-        # 測試用加減道具 (可選)
-        # elif e.key in (pg.K_PLUS, pg.K_EQUALS): v.inventory_list[v.p2_i_idx]["count"]+=1
-        # elif e.key in (pg.K_MINUS, pg.K_KP_MINUS): 
-        #     if v.inventory_list[v.p2_i_idx]["count"] > -1: 
-        #         v.inventory_list[v.p2_i_idx]["count"] -= 1
         elif e.key == pg.K_LEFT: v.p2_sect, v.p2_c_idx = 0, v.P2_CHAR_N-1
         elif e.key in (pg.K_RETURN, pg.K_z): use_item(v, v.p2_i_idx)
 
@@ -447,7 +432,9 @@ def draw_p1(main, v, s):
             s.blit(v.font_small.render(f"Time: {h:02d}:{m:02d}:{sc:02d}", True, C['LIGHT']), (r.x+sx(10), r.bottom-sy(25)))
         else: s.blit(v.font_mid.render("----", True, C['LIGHT']), (r.centerx-sx(10), r.centery-sy(5)))
     
-    for r, t, f in [(v.btn_save,"存檔",v.cursor==[1,3]), (v.btn_load,"讀檔",v.cursor==[1,4])]:
+    for i, (r, t) in enumerate([(v.btn_save,"存檔"), (v.btn_load,"讀檔")]):
+        idx = i + 3
+        f = (v.cursor==[1, idx])
         pg.draw.rect(s, C['BG_MAIN'], r, 2, sx(6))
         if f: pg.draw.rect(s, C['MID'], r, 3, sx(6))
         ts = v.font_mid.render(t, True, (255,255,255) if f else C['BG_MAIN'])
@@ -469,7 +456,6 @@ def draw_p2(main, v, s):
         d = v.game_data.party_data[i]
         n = v.font_mid.render(d['name'], True, C['DARK']); s.blit(n, n.get_rect(center=(r.centerx, r.y+sy(20))))
         
-        # 只針對 U 繪製立繪、血條與魔力條
         if d['name'] == "U":
             try:
                 img = pg.image.load(os.path.join(v.IMG_CHAR, "U", "u_stand.png")).convert_alpha()
@@ -477,7 +463,6 @@ def draw_p2(main, v, s):
                 s.blit(pg.transform.smoothscale(img, (int(img.get_width()*sc), int(img.get_height()*sc))), (r.x+sx(5), r.centery-sy(35)))
             except: pass
         
-            # HP 條
             hp_rect = pg.Rect(r.x+sx(6), r.bottom-sy(38), r.w-sx(12), sy(8))
             pg.draw.rect(s, (200,200,200), hp_rect, border_radius=3)
             if d['max_hp'] > 0 and d['hp'] > 0:
@@ -485,7 +470,6 @@ def draw_p2(main, v, s):
                 pg.draw.rect(s, (167,191,139), (hp_rect.x, hp_rect.y, w, hp_rect.h), border_radius=3)
             pg.draw.rect(s, (150,150,150), hp_rect, 1, border_radius=3)
 
-            # MP 條
             mp_rect = pg.Rect(r.x+sx(6), r.bottom-sy(25), r.w-sx(12), sy(8))
             pg.draw.rect(s, (200,200,200), mp_rect, border_radius=3)
             max_mp = d.get('max_mp', 0)
@@ -498,7 +482,6 @@ def draw_p2(main, v, s):
     pg.draw.rect(s, C['BG_MAIN'], v.desc_l, 2, sx(6))
     cd = v.game_data.party_data[v.p2_c_idx]
     
-    # 描述欄資訊
     status_str = f"[ {cd['name']} ]  HP: {cd['hp']}/{cd['max_hp']}"
     if cd['name'] == "U":
         status_str += f"  MP: {cd.get('mp',0)}/{cd.get('max_mp',0)}"
