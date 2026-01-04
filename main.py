@@ -125,6 +125,9 @@ def bgm_manager():
     if main.last_game_state.find("forest") != -1 and \
        main.game_state.find("forest") != -1:
         return
+    if main.last_game_state.find("lab") != -1 and \
+       main.game_state.find("lab") != -1:
+        return
     
     if main.game_state in ["fight", "home"]:
         pg.mixer.music.pause()
@@ -267,6 +270,12 @@ if __name__ == "__main__":
                 scene=labg_c.update(main,scene,font,scene["labg_c_var"])
             case "labg_d":
                 scene=labg_d.update(main,scene,font,scene["labg_d_var"])
+            case "labg_e":
+                import labg_e
+                main=labg_e.update(main.w,main.h,main)
+                main.last_game_state="labg_e"
+                main.MoveKeyQueue=[]
+                continue
             case "fight":
                 pg.mixer.music.stop() 
                 fight.run_battle(main.screen)
