@@ -120,6 +120,7 @@ def bgm_manager():
         return
     
     if main.game_state in ["fight", "home"]:
+        pg.mixer.music.pause()
         return
 
     target_music = main.music_playlist.get(main.game_state)
