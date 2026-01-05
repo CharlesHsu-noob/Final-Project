@@ -208,18 +208,26 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
             self.col = int((self.x - OFFSET_X) // GRID_SIZE)
             self.row = int((self.y - OFFSET_Y) // GRID_SIZE)
 
-    # 障礙物 (保留原設定)
-    obstacle_rect = pg.Rect(1360, 778, 230, 75)
+ # ----------------- 障礙物設定 (125% 縮放) -----------------
+    # 原始 100% 數據: (1360, 778, 230, 75)
+    # 修正 125% 數據: (1700, 972, 287, 93)
+    # 說明: 這些數值是根據 Windows 125% 顯示比例換算後的結果
+    obstacle_rect = pg.Rect(1700, 972, 287, 93)
 
-    # ----------------- 建地圖 -----------------
+    # ----------------- 建地圖與標記障礙物 -----------------
     grid = [[Tile(c, r) for r in range(ROWS)] for c in range(COLS)]
 
-    # 禁止放置鏡子的格子（障礙物區域）
+    # 遍歷所有格子，檢查是否與障礙物重疊
     for c in range(COLS):
         for r in range(ROWS):
             t = grid[c][r]
+            
+            # 檢查格子的中心點是否在障礙物矩形內
+            # 如果覺得邊緣判定不夠嚴格，可以改用 obstacle_rect.colliderect(t.rect)
             if obstacle_rect.collidepoint(t.center):
                 t.can_place = False
+                # 測試用：可以在這裡 print 出來看看哪些格子被鎖住了
+                
 
     # 示範鏡子
     grid[0][5].mirror = Mirror(45)
@@ -433,7 +441,7 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
     running = True
     while running:
         dt = clock.tick(FPS)
-
+        
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -551,6 +559,7 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
             player.anim_timer = 0
 
         # ================== 畫畫面 ==================
+        pg.draw.rect(screen, (255, 0, 0), obstacle_rect, 2)
         screen.fill(BLACK)
         screen.blit(bg_img, (0, 0))
         draw_grid()

@@ -1,8 +1,8 @@
 {
     "chapter": 1,
-    "money": 89,
-    "playtime": 122.67745018005371,
-    "timestamp": "2026-01-04 22:56",
+    "money": 100,
+    "playtime": 53.02434468269348,
+    "timestamp": "2026-01-05 08:17",
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
@@ -11,7 +11,7 @@
             "desc": "內向 不擅交流",
             "hp": 100,
             "max_hp": 100,
-            "mp": 3,
+            "mp": 10,
             "max_mp": 20,
             "runes": []
         },
@@ -54,34 +54,15 @@
     ],
     "inventory": [],
     "player_pos": [
-        2539,
-        544
+        1440,
+        270
     ],
-    "scene_name": "unknown",
-    "upgrade_log": [
-        {
-            "timestamp": "2026-01-04 02:16:24",
-            "char": "U",
-            "source": "堅果棒",
-            "effect": "HP +20%"
-        },
-        {
-            "timestamp": "2026-01-04 02:16:26",
-            "char": "U",
-            "source": "能量飲料",
-            "effect": "MP +3"
-        },
-        {
-            "timestamp": "2026-01-04 02:16:28",
-            "char": "U",
-            "source": "空白符文",
-            "effect": "None"
-        }
-    ],
+    "scene_name": "forest_c",
+    "upgrade_log": [],
     "unlock_flags": {
         "intro_played": true,
         "home_door": false,
-        "mountain_path": false,
+        "mountain_path": true,
         "lake_boat": false,
         "forest_depth": false
     }

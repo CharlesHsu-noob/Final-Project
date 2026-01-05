@@ -304,7 +304,7 @@ def update(screen_w,screen_h):
 
         if player_x<238:
            break
-        print(player_x)
+        #print(player_x)
 
 #pg.quit()
 #sys.exit()
