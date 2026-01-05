@@ -648,7 +648,7 @@ while running:
     
     bar_w = 200
     bar_h = 20
-    bx, by = 20, 20
+    bx, by = 300, 200
     pg.draw.rect(screen, (60, 60, 60), (bx, by, bar_w, bar_h))
     fill_w = int(bar_w * (player_hp / player_max_hp))
     pg.draw.rect(screen, (200, 50, 50), (bx, by, fill_w, bar_h))

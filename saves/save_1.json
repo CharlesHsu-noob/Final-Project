@@ -1,8 +1,14 @@
 {
     "chapter": 1,
+<<<<<<< HEAD
     "money": 100,
     "playtime": 47.192601442337036,
     "timestamp": "2026-01-05 07:34",
+=======
+    "money": 89,
+    "playtime": 221.6781623363495,
+    "timestamp": "2026-01-05 07:37",
+>>>>>>> 669a1d59327399a2046e6a16027ec1789eb2a419
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
@@ -52,6 +58,7 @@
             "runes": []
         }
     ],
+<<<<<<< HEAD
     "inventory": [],
     "player_pos": [
         1440,
@@ -62,6 +69,62 @@
     "unlock_flags": {
         "intro_played": true,
         "home_door": false,
+=======
+    "inventory": [
+        {
+            "name": "堅果棒",
+            "desc": "恢復 20% HP",
+            "type": "consumable",
+            "icon_file": "icon_food.png",
+            "effect": "HP +20%",
+            "count": -1
+        },
+        {
+            "name": "能量飲料",
+            "desc": "恢復 3 MP",
+            "type": "consumable",
+            "icon_file": "icon_potion.png",
+            "effect": "MP +3",
+            "count": -1
+        },
+        {
+            "name": "空白符文",
+            "desc": "可注入技能",
+            "type": "material",
+            "icon_file": "icon_rune.png",
+            "effect": "None",
+            "count": -1
+        }
+    ],
+    "player_pos": [
+        1394.4,
+        270
+    ],
+    "scene_name": "forest_c",
+    "upgrade_log": [
+        {
+            "timestamp": "2026-01-04 02:16:24",
+            "char": "U",
+            "source": "堅果棒",
+            "effect": "HP +20%"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:26",
+            "char": "U",
+            "source": "能量飲料",
+            "effect": "MP +3"
+        },
+        {
+            "timestamp": "2026-01-04 02:16:28",
+            "char": "U",
+            "source": "空白符文",
+            "effect": "None"
+        }
+    ],
+    "unlock_flags": {
+        "intro_played": true,
+        "home_door": true,
+>>>>>>> 669a1d59327399a2046e6a16027ec1789eb2a419
         "mountain_path": true,
         "lake_boat": false,
         "forest_depth": false
