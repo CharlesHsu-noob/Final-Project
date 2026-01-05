@@ -669,12 +669,12 @@ def update(sc_w,sc_h,main=xo.VAR()) ->xo.VAR :
 
         draw_laser_emitter(current_base_img, turret_angle)
 
-    # [修改重點] UI 提示使用 hand_pos
-    cur_tile = tile_at_pixel(*player.hand_pos)
-    if cur_tile and cur_tile.mirror:
-        screen.blit(font.render("按E撿起鏡子", True, BLACK), (30, 45))
-    elif player.holding and cur_tile and cur_tile.can_place and cur_tile.mirror is None and not player.adjust_mode:
-        screen.blit(font.render("按E可調整鏡子角度", True, BLACK), (30, 45))
+        # [修改重點] UI 提示使用 hand_pos
+        cur_tile = tile_at_pixel(*player.hand_pos)
+        if cur_tile and cur_tile.mirror:
+            screen.blit(font.render("按E撿起鏡子", True, BLACK), (30, 45))
+        elif player.holding and cur_tile and cur_tile.can_place and cur_tile.mirror is None and not player.adjust_mode:
+            screen.blit(font.render("按E可調整鏡子角度", True, BLACK), (30, 45))
 
         if player.adjust_mode and player.holding:
             # 調整模式顯示
@@ -736,7 +736,7 @@ def update(sc_w,sc_h,main=xo.VAR()) ->xo.VAR :
 
 
         print(player.pos)
-
+        
         pg.display.flip()
 
 
@@ -746,6 +746,6 @@ if __name__=="__main__":
     pg.init()
     screeninfo=pg.display.Info()
     w,h=screeninfo.current_w,screeninfo.current_h
-    update(w,h)
+    a=update(w,h)
     pg.quit()
     sys.exit()
