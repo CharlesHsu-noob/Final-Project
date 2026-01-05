@@ -21,33 +21,34 @@ def update(screen_w,screen_h):
     world_surface = pg.Surface((WORLD_WIDTH, WORLD_HEIGHT), pg.SRCALPHA)
 
     # --- 等比例縮放計算 ---
-    scale_x =1.536 #WINDOW_WIDTH / WORLD_WIDTH
-    scale_y =1.8 #WINDOW_HEIGHT / WORLD_HEIGHT
-    SCALE =1.536 #min(scale_x, scale_y)
+    scale_x =1.536 
+    scale_y =1.8 
+    SCALE =1.536 
 
-    scaled_width =2074 #int(WORLD_WIDTH * SCALE)
-    scaled_height =921 #int(WORLD_HEIGHT * SCALE)
+    scaled_width =2074 
+    scaled_height =921 
     offset_x = (WINDOW_WIDTH - scaled_width) // 2
     offset_y = (WINDOW_HEIGHT - scaled_height) // 2 +8
 
 
     # ================= 顏色 =================
     BLACK = (0, 0, 0)
-    GREEN = (34, 139, 34)
-    BLUE = (0, 100, 255)
-    RED = (255, 0, 0) # 除錯用紅色
+    
+    # 載入圖片 (略過未變動部分...)
+    try:
+        bg_img_raw = pg.image.load(os.path.join("image", "forest_e.png")).convert()
+        bg_img_full = pg.transform.scale(bg_img_raw, (2000, 3500))
+    except:
+        bg_img_full = pg.Surface((2000, 3500)) # 防呆
 
-    # 請確保你的圖片路徑正確，若無圖片可先註解掉 image.load 改用 fill
-    bg_img_raw = pg.image.load(os.path.join("image", "forest_e.png")).convert()
-    bg_img_full = pg.transform.scale(bg_img_raw, (2000, 3500))
+    try:
+        player_img = pg.image.load(os.path.join("image", "chuchutest", "u_stand.png")).convert_alpha()
+    except:
+        player_img = pg.Surface((48, 64)) # 防呆
 
-    # ================= 玩家圖片 =================
-    player_img = pg.image.load(os.path.join("image", "chuchutest", "u_stand.png")).convert_alpha()
     PLAYER_WIDTH = 48
     PLAYER_HEIGHT = 64
     player_img = pg.transform.scale(player_img, (PLAYER_WIDTH, PLAYER_HEIGHT))
-    # 這裡原本有重設 PLAYER_WIDTH，稍微修正邏輯保留圖片寬度
-    # PLAYER_WIDTH = 16 (原始代碼這行會讓圖片與碰撞箱大小不一致，暫時保留你的設定)
     PLAYER_WIDTH = 16
     char_half_w=24
 
@@ -58,9 +59,12 @@ def update(screen_w,screen_h):
             self.image=image
             self.rect=self.image.get_rect(center=(player_x,player_y))
 
-    player_x = 1250
-    player_y = 300 # 玩家初始位置
-    bg_scroll_anchor_y = 300 # 背景捲動基準點
+    # [修改] 這裡設定你要往下移多少像素
+    SHIFT_DOWN = 67  # <--- 修改這個數字，越大越往下，負數則往上
+
+    player_x = 1050
+    player_y = 200 + SHIFT_DOWN # [修改] 玩家初始位置也要跟著下移，不然會摔死
+    bg_scroll_anchor_y = 300 
     BG_SCROLL_ANCHOR_INITIAL = bg_scroll_anchor_y
     player_vx = 0
     player_vy = 0
@@ -75,7 +79,7 @@ def update(screen_w,screen_h):
     time_since_ground = 0
 
     # --- 跳躍冷卻設定 ---
-    JUMP_COOLDOWN = 750  # 毫秒
+    JUMP_COOLDOWN = 750  
     last_jump_time = -750
 
     # ================= 平台設定 =================
@@ -87,7 +91,8 @@ def update(screen_w,screen_h):
     PLATFORM_WIDTH = 80
     PLATFORM_HEIGHT = 15
 
-    platform_positions = [
+    # [修改] 原始座標列表 (保持不變)
+    raw_platform_positions = [
         (-60, 322),(20, 322),(100, 322),(180, 322),(260, 322),(340, 322),(420, 322),
         (500, 322),(580, 322),(660, 322),(740, 322),(820, 322),(900, 322),(980, 322),
         (1060, 322),(1140, 322),(1220, 322),(1300, 322),
@@ -96,30 +101,34 @@ def update(screen_w,screen_h):
         (700, -450),(620, -530),(550, -590),(490, -640),(400, -693),(350, -693),(290, -693),(210, -693),(130, -693),
     ]
 
-    # 定義要隱藏的岩石座標
-    hidden_rock_coords = [
+    # [修改] 自動計算新的座標：將所有 Y 加上 SHIFT_DOWN
+    platform_positions = [(x, y + SHIFT_DOWN) for x, y in raw_platform_positions]
+
+    # [修改] 原始隱藏岩石座標
+    raw_hidden_rock_coords = [
         (350, -693),(290, -693), (210, -693), (130, -693)
     ]
+    # [修改] 自動計算新的隱藏岩石座標
+    hidden_rock_coords = [(x, y + SHIFT_DOWN) for x, y in raw_hidden_rock_coords]
 
     platforms = [pg.Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT) for x, y in platform_positions]
     ground = platforms[:18]
 
-    rock_img = pg.image.load(os.path.join("image", "forest_rock.png")).convert_alpha()
-    rock_img = pg.transform.scale(rock_img, (PLATFORM_WIDTH, PLATFORM_HEIGHT))
+    try:
+        rock_img = pg.image.load(os.path.join("image", "forest_rock.png")).convert_alpha()
+        rock_img = pg.transform.scale(rock_img, (PLATFORM_WIDTH, PLATFORM_HEIGHT))
+    except:
+        rock_img = pg.Surface((PLATFORM_WIDTH, PLATFORM_HEIGHT))
 
     platform_object=[]
     for pos in platform_positions:
         wall=platOb(rock_img,pos)
         platform_object.append(wall)
 
-    # ================= [新增] 左側隱形牆壁設定 =================
-    # x = -100 (在最左邊平台 -60 的更左邊)
-    # y = -5000 (設很高，確保往上跳也擋得住)
-    # w = 40 (厚度)
-    # h = 6000 (高度，確保覆蓋整個遊戲垂直範圍)
-    debug_wall = pg.Rect(350, 100, 40, 6000)
+    # ================= 左側隱形牆壁設定 =================
+    # [修改] 牆壁的位置也加上 SHIFT_DOWN 比較保險
+    debug_wall = pg.Rect(350, 100 + SHIFT_DOWN, 40, 6000)
 
-    # 將牆壁加入 platforms 列表，這樣它就會自動擁有碰撞和捲動功能
     platforms.append(debug_wall)
     # ========================================================
 
@@ -135,6 +144,10 @@ def update(screen_w,screen_h):
     # ================= 捲動設定 =================
     SCROLL_UP_TRIGGER_Y = WORLD_HEIGHT * 0.35
     SCROLL_DOWN_TRIGGER_Y = 250
+
+    # [修改] 初始地板高度 (用於捲動限制)，這也需要更新
+    # 原本是 322，現在變成 322 + SHIFT_DOWN
+    INITIAL_GROUND_Y = 322 + SHIFT_DOWN 
 
     # ================= 遊戲主迴圈 =================
     running = True
@@ -182,7 +195,7 @@ def update(screen_w,screen_h):
             PLAYER_HEIGHT
         )
 
-        # 碰撞檢測 (包含新增的牆壁)
+        # 碰撞檢測
         for i in range(len(platforms)):
             plat = platforms[i]
             if player_rect.colliderect(plat):
@@ -234,11 +247,12 @@ def update(screen_w,screen_h):
             bg_scroll_anchor_y += int_scroll
 
         # ---------- 向下捲動 ----------
-        INITIAL_GROUND_Y = 322
+        # [修改] 這裡使用了動態計算後的 INITIAL_GROUND_Y
         if player_y > SCROLL_DOWN_TRIGGER_Y:
             raw_scroll = player_y - SCROLL_DOWN_TRIGGER_Y
             int_scroll = int(raw_scroll)
 
+            # 確保不會捲動超過地板初始位置
             if platforms[0].y - int_scroll < INITIAL_GROUND_Y:
                 int_scroll = platforms[0].y - INITIAL_GROUND_Y
 
@@ -260,10 +274,8 @@ def update(screen_w,screen_h):
         world_surface.fill((0, 0, 0, 0))
 
         for plat in platforms:
-            # === [新增] 繪製除錯牆壁 (紅色) ===
             if plat == debug_wall:
-                pass # 畫出紅色矩形
-            # ================================
+                pass 
             elif plat in ground:
                 pass
             elif plat.topleft in hidden_rock_coords:
@@ -306,5 +318,4 @@ def update(screen_w,screen_h):
            break
         print(player_x)
 
-#pg.quit()
-#sys.exit()
+    

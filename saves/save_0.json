@@ -1,8 +1,8 @@
 {
     "chapter": 1,
     "money": 89,
-    "playtime": 122.67745018005371,
-    "timestamp": "2026-01-04 22:56",
+    "playtime": 196.78683280944824,
+    "timestamp": "2026-01-05 07:36",
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
@@ -52,12 +52,37 @@
             "runes": []
         }
     ],
-    "inventory": [],
-    "player_pos": [
-        2539,
-        544
+    "inventory": [
+        {
+            "name": "堅果棒",
+            "desc": "恢復 20% HP",
+            "type": "consumable",
+            "icon_file": "icon_food.png",
+            "effect": "HP +20%",
+            "count": -1
+        },
+        {
+            "name": "能量飲料",
+            "desc": "恢復 3 MP",
+            "type": "consumable",
+            "icon_file": "icon_potion.png",
+            "effect": "MP +3",
+            "count": -1
+        },
+        {
+            "name": "空白符文",
+            "desc": "可注入技能",
+            "type": "material",
+            "icon_file": "icon_rune.png",
+            "effect": "None",
+            "count": -1
+        }
     ],
-    "scene_name": "unknown",
+    "player_pos": [
+        1512,
+        718
+    ],
+    "scene_name": "forest_b",
     "upgrade_log": [
         {
             "timestamp": "2026-01-04 02:16:24",
@@ -80,7 +105,7 @@
     ],
     "unlock_flags": {
         "intro_played": true,
-        "home_door": false,
+        "home_door": true,
         "mountain_path": false,
         "lake_boat": false,
         "forest_depth": false

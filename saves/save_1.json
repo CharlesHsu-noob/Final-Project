@@ -1,14 +1,14 @@
 {
     "chapter": 1,
     "money": 89,
-    "playtime": 119.10300326347351,
-    "timestamp": "2026-01-04 19:57",
+    "playtime": 221.6781623363495,
+    "timestamp": "2026-01-05 07:37",
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
         {
             "name": "U",
-            "desc": "\u5167\u5411 \u4e0d\u64c5\u4ea4\u6d41",
+            "desc": "內向 不擅交流",
             "hp": 100,
             "max_hp": 100,
             "mp": 3,
@@ -54,24 +54,24 @@
     ],
     "inventory": [
         {
-            "name": "\u5805\u679c\u68d2",
-            "desc": "\u6062\u5fa9 20% HP",
+            "name": "堅果棒",
+            "desc": "恢復 20% HP",
             "type": "consumable",
             "icon_file": "icon_food.png",
             "effect": "HP +20%",
             "count": -1
         },
         {
-            "name": "\u80fd\u91cf\u98f2\u6599",
-            "desc": "\u6062\u5fa9 3 MP",
+            "name": "能量飲料",
+            "desc": "恢復 3 MP",
             "type": "consumable",
             "icon_file": "icon_potion.png",
             "effect": "MP +3",
             "count": -1
         },
         {
-            "name": "\u7a7a\u767d\u7b26\u6587",
-            "desc": "\u53ef\u6ce8\u5165\u6280\u80fd",
+            "name": "空白符文",
+            "desc": "可注入技能",
             "type": "material",
             "icon_file": "icon_rune.png",
             "effect": "None",
@@ -79,28 +79,35 @@
         }
     ],
     "player_pos": [
-        1260,
-        508
+        1394.4,
+        270
     ],
-    "scene_name": "labg_c",
+    "scene_name": "forest_c",
     "upgrade_log": [
         {
             "timestamp": "2026-01-04 02:16:24",
             "char": "U",
-            "source": "\u5805\u679c\u68d2",
+            "source": "堅果棒",
             "effect": "HP +20%"
         },
         {
             "timestamp": "2026-01-04 02:16:26",
             "char": "U",
-            "source": "\u80fd\u91cf\u98f2\u6599",
+            "source": "能量飲料",
             "effect": "MP +3"
         },
         {
             "timestamp": "2026-01-04 02:16:28",
             "char": "U",
-            "source": "\u7a7a\u767d\u7b26\u6587",
+            "source": "空白符文",
             "effect": "None"
         }
-    ]
+    ],
+    "unlock_flags": {
+        "intro_played": true,
+        "home_door": true,
+        "mountain_path": true,
+        "lake_boat": false,
+        "forest_depth": false
+    }
 }
