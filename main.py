@@ -455,6 +455,10 @@ if __name__ == "__main__":
                 main.last_game_state="labg_e"
                 main.MoveKeyQueue=[]
                 continue
+            case "boss":
+                import boss
+                main=boss.update(main.w,main.h,main)
+                
             case "fight":
                 pg.mixer.music.stop() 
                 

@@ -1,7 +1,7 @@
-from email.policy import default
+
 
 import XddObjects as xo
-def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
+def update(sc_w,sc_h,main:xo.VAR=xo.VAR())->xo.VAR:
     import pygame as pg
     import math
     import sys
@@ -181,7 +181,7 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
         def __init__(self, col=1, row=1):
             self.col = col
             self.row = row
-            self.x =1290 #OFFSET_X + col * GRID_SIZE + GRID_SIZE//2
+            self.x =1450 #OFFSET_X + col * GRID_SIZE + GRID_SIZE//2
             self.y =421 #OFFSET_Y + row * GRID_SIZE + GRID_SIZE//2
             self.holding = None
             self.adjust_mode = False
@@ -566,10 +566,10 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
         draw_shadow_laser(last_laser_path)
         draw_shadow_mirrors(last_mirrors)
         if goal_passed:
-            screen.blit(lift,(566,18))
+            screen.blit(lift,(630,18))
             if player.x>608 and player.x<760:
                 if player.y<219 and player.y>100:
-                    main.game_state="labb_a"
+                    main.game_state="boss"
                     return main
         draw_tiles_contents()
         draw_player()
@@ -629,21 +629,22 @@ def update(sc_w,sc_h,main:xo.VAR=default)->xo.VAR:
         for i, s in enumerate(legend):
             screen.blit(font.render(s, True, BLACK), (10, HEIGHT - 110 + i*18))
 
-        if player.x>1341 and player.y>290 and player.y<520:
+        if player.x>1520 and player.y>337 and player.y<570:
+            print("go to labg_c")
             main.game_state="labg_c"
             return main
-
-
-        print(player.pos)
+        #screen.blit(lift,(630,18))
+        print(player.pos,goal_passed)
         pg.display.flip()
 
 if __name__ == "__main__":
     import pygame as pg
+    import sys
     pg.init()
     screeninfo = pg.display.Info()
     WIDTH, HEIGHT = screeninfo.current_w, screeninfo.current_h
     print(WIDTH, HEIGHT)
-    update(WIDTH, HEIGHT)
+    a=update(WIDTH, HEIGHT)
     pg.quit()
     sys.exit()
 

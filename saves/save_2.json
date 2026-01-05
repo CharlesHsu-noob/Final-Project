@@ -1,25 +1,15 @@
 {
     "chapter": 1,
-<<<<<<< HEAD
     "money": 100,
     "playtime": 72.02742314338684,
     "timestamp": "2026-01-05 00:36",
-=======
-    "money": 115,
-    "playtime": 243.8406801223755,
-    "timestamp": "2026-01-05 07:26",
->>>>>>> 669a1d59327399a2046e6a16027ec1789eb2a419
     "volume": 0.5,
     "sfx_volume": 0.5,
     "party": [
         {
             "name": "U",
             "desc": "內向 不擅交流",
-<<<<<<< HEAD
             "hp": 100,
-=======
-            "hp": 49,
->>>>>>> 669a1d59327399a2046e6a16027ec1789eb2a419
             "max_hp": 100,
             "mp": 2,
             "max_mp": 20,
@@ -62,7 +52,6 @@
             "runes": []
         }
     ],
-<<<<<<< HEAD
     "inventory": [],
     "player_pos": [
         972,
@@ -75,45 +64,6 @@
         "home_door": true,
         "mountain_path": false,
         "lake_boat": false,
-=======
-    "inventory": [
-        {
-            "name": "能量飲料",
-            "desc": "能量+3",
-            "type": "consumable",
-            "effect": "ENG +3",
-            "icon_file": "enrgdrnk.png",
-            "count": -1
-        },
-        {
-            "name": "堅果棒",
-            "desc": "血量回復20%",
-            "type": "consumable",
-            "effect": "HP +20%",
-            "icon_file": "nutbar.png",
-            "count": -1
-        },
-        {
-            "name": "空白符文",
-            "desc": "點擊開啟刻印選單",
-            "type": "rune",
-            "effect": "Rune",
-            "icon_file": "rune_empty.png",
-            "count": -1
-        }
-    ],
-    "player_pos": [
-        1000,
-        500
-    ],
-    "scene_name": "forest_c",
-    "upgrade_log": [],
-    "unlock_flags": {
-        "intro_played": true,
-        "home_door": false,
-        "mountain_path": true,
-        "lake_boat": true,
->>>>>>> 669a1d59327399a2046e6a16027ec1789eb2a419
         "forest_depth": false
     }
 }
